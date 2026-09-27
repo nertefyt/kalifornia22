@@ -1,0 +1,38 @@
+[
+    {
+        "code": "SUSHI300",
+        "active": true,
+        "type": "fixed",
+        "value": 300,
+        "minOrderAmount": 1500,
+        "maxUses": 50,
+        "usedCount": 0,
+        "startsAt": "2026-01-01T00:00:00+03:00",
+        "expiresAt": "2026-12-31T23:59:59+03:00",
+        "description": "Скидка 300 ₽ при заказе от 1500 ₽"
+    },
+    {
+        "code": "ROLL20",
+        "active": true,
+        "type": "percent",
+        "value": 20,
+        "minOrderAmount": 2000,
+        "maxUses": 25,
+        "usedCount": 0,
+        "startsAt": "2026-01-01T00:00:00+03:00",
+        "expiresAt": "2026-09-30T23:59:59+03:00",
+        "description": "Скидка 20% на заказ от 2000 ₽"
+    },
+    {
+        "code": "XYECOC",
+        "type": "percent",
+        "value": 99,
+        "active": true,
+        "minOrderAmount": 0,
+        "maxUses": 20,
+        "usedCount": 1,
+        "startsAt": null,
+        "expiresAt": null,
+        "createdAt": "2026-09-23T16:27:16.478Z"
+    }
+]

@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+
+  <!-- Ограничение масштабирования для корректного отображения на мобильных устройствах -->
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+  >
+
+  <meta
+    name="description"
+    content="Суши и роллы с доставкой. Заказывайте любимые роллы, сеты, суши и напитки."
+  >
+
+  <title>Калифорния - это про роллы</title>
+
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    .footer-socials {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    .social-link {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-decoration: none;
+      transition:
+        transform 0.2s ease,
+        opacity 0.2s ease;
+    }
+
+    .social-link:hover {
+      transform: translateY(-2px);
+      opacity: 0.85;
+    }
+
+    .social-link svg {
+      width: 21px;
+      height: 21px;
+      fill: currentColor;
+    }
+
+    .social-max {
+      background: #000;
+      color: #fff;
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: -0.3px;
+    }
+
+    .social-telegram {
+      background: #229ED9;
+      color: #fff;
+    }
+
+    .social-vk {
+      background: #0077FF;
+      color: #fff;
+    }
+
+    @media (min-width: 769px) {
+      .footer-socials {
+        margin-top: 0;
+      }
+    }
+  </style>
+  <style>
+    .floating-cart {
+      display: flex !important;
+    }
+  </style>
+</head>
+
+<body>
+
+<!-- =========================================================
+     ШАПКА САЙТА
+     ========================================================= -->
+<header class="site-header">
+
+  <div class="header-inner">
+
+    <a href="#" class="logo" aria-label="На главную">
+      <img src="img/logo.jpg" alt="Калифорния" class="logo-img" style="max-height: 50px; width: auto;">
+    </a>
+
+
+
+  </div>
+
+</header>
+
+
+<!-- =========================================================
+     ОСНОВНОЙ КОНТЕНТ
+     ========================================================= -->
+<main>
+
+  <!-- =====================================================
+       HERO / ПРИВЕТСТВЕННЫЙ БЛОК
+       ===================================================== -->
+  <section class="hero">
+
+    <div class="container hero-content">
+
+      <div class="hero-text">
+
+        <span class="hero-label">
+          КАЛИФОРНИЯ НА СВЯЗИ
+        </span>
+
+        <h1>
+          ЗАХОТЕЛИ - ЗНАЧИТ, ПОРА<br>
+          РОЛЛЫ УЖЕ ЖДУТ
+        </h1>
+
+        <p>
+          Свежие ингредиенты,
+          любимые сочетания
+          и доставка к вашей двери.
+        </p>
+
+        <a
+          href="#menu"
+          class="hero-button"
+        >
+          Смотреть меню
+        </a>
+
+      </div>
+
+      <div class="hero-decoration" aria-hidden="true">
+        <img src="img/main_dec.jpg" alt="" class="main_dec-img" style="max-height: 170px; width: 170px;">
+      </div>
+
+    </div>
+
+  </section>
+
+
+  <!-- =====================================================
+       МЕНЮ
+       ===================================================== -->
+  <section
+    class="menu-section"
+    id="menu"
+  >
+
+    <div class="container">
+
+      <div class="section-heading">
+
+        <div>
+          <span class="section-kicker">
+            Наше меню
+          </span>
+
+          <h2>
+            Выбирайте любимое
+          </h2>
+        </div>
+
+      </div>
+
+
+      <!-- =================================================
+           ГОРИЗОНТАЛЬНАЯ НАВИГАЦИЯ ПО КАТЕГОРИЯМ
+           ================================================= -->
+      <nav
+        class="category-nav"
+        id="categoryNav"
+        aria-label="Категории меню"
+      >
+        <!-- Категории создаются автоматически -->
+      </nav>
+
+
+      <!-- =================================================
+           КОНТЕЙНЕР КАТЕГОРИЙ И ТОВАРОВ
+           ================================================= -->
+      <div
+        class="menu-categories"
+        id="menuCategories"
+      >
+        <!-- Товары создаются автоматически -->
+      </div>
+
+    </div>
+
+  </section>
+
+
+  <!-- =====================================================
+       КАРТА / ЗОНА ДОСТАВКИ
+       ===================================================== -->
+  <section class="delivery-section">
+
+    <div class="container">
+
+      <div class="delivery-card">
+
+        <div class="delivery-info">
+
+          <span class="section-kicker">
+            Доставка
+          </span>
+
+          <h2>
+            Привезём горячие роллы
+            прямо к вам
+          </h2>
+
+          <p>
+            Укажите адрес при оформлении заказа.
+            Стоимость и время доставки зависят
+            от вашего района.
+          </p>
+
+          <div class="delivery-features">
+
+            <div class="delivery-feature">
+              <span>🚗</span>
+              <div>
+                <strong>Быстрая доставка</strong>
+                <small>От 45 минут</small>
+              </div>
+            </div>
+
+            <div class="delivery-feature">
+              <span>📦</span>
+              <div>
+                <strong>Бережная упаковка</strong>
+                <small>Всё приедет аккуратно</small>
+              </div>
+            </div>
+
+            <div class="delivery-feature">
+              <span>📍</span>
+              <div>
+                <strong>Доставка по городу</strong>
+                <small>До двери</small>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+
+        <div
+          class="map-container"
+          id="deliveryMap"
+          aria-label="Карта зоны доставки"
+        >
+          <div class="map-placeholder">
+            <div class="map-grid"></div>
+            <div class="map-pin"><span>📍</span></div>
+            <div class="map-label">Зона доставки</div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+  </section>
+
+
+  <!-- =====================================================
+       ИНФОРМАЦИОННЫЙ CTA
+       ===================================================== -->
+  <section class="cta-section">
+
+    <div class="container">
+
+      <div class="cta-card">
+
+        <div>
+          <span class="cta-emoji">🥢</span>
+
+          <h2>Готовы сделать заказ?</h2>
+
+          <p>
+            Соберите корзину из любимых роллов
+            и оформите доставку.
+          </p>
+        </div>
+
+        <a href="#menu" class="cta-button">
+          Перейти к меню
+        </a>
+
+      </div>
+
+    </div>
+
+  </section>
+
+</main>
+
+
+<!-- =========================================================
+     ПОДВАЛ
+     ========================================================= -->
+<footer class="site-footer">
+
+  <div class="container footer-inner">
+
+    <div class="footer-brand">
+
+      <a href="#" class="logo">
+        <span class="logo-text">Калифорния</span>
+      </a>
+
+      <p>Свежие ингредиенты,<br>
+        любимые сочетания<br>
+        и доставка к вашей двери.</p>
+
+    </div>
+
+
+    <div class="footer-contacts">
+
+      <a href="tel:+7 3852 (600-698)">+7 3852 (600-698)</a>
+      <span>Ежедневно: 10:00–22:00</span>
+
+    </div>
+    <div class="footer-socials">
+
+      <a
+        href="https://max.ru/channel_Kalifa"
+        class="social-link social-max"
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label="MAX"
+        title="MAX"
+      >
+        <span>MAX</span>
+      </a>
+
+      <a
+        href="https://t.me/california600698"
+        class="social-link social-telegram"
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label="Telegram"
+        title="Telegram"
+      >
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M21.8 4.6 18.7 19c-.2 1-1 1.3-1.8.8l-5-3.7-2.4 2.3c-.3.3-.5.5-1 .5l.4-5.1 9.2-8.3c.4-.4-.1-.6-.6-.2L6.1 12.7 1.2 11.2c-1.1-.3-1.1-1.1.2-1.6L20.5 2.1c.9-.3 1.7.2 1.3 2.5Z"/>
+        </svg>
+      </a>
+
+      <a
+        href="https://m.vk.ru/club237346856"
+        class="social-link social-vk"
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label="VK"
+        title="VK"
+      >
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M13.1 17.7c.2 0 .4-.1.4-.4 0-.9.3-1.4 1-1.4.6 0 1.1.7 1.8 1.4.5.5.8.4 1.5.4h2.1c.8 0 1.1-.3.8-1-.2-.6-1.5-1.7-1.9-2.1-.4-.4-.5-.6-.1-1.1.1-.1 1.8-2.5 2-3.4.1-.5 0-.8-.7-.8h-2.1c-.5 0-.7.2-.9.6-.3.8-1.1 2.2-1.5 2.7-.3.3-.4.4-.6.4-.1 0-.3-.1-.3-.6V10c0-.7-.2-1-.8-1h-3.2c-.3 0-.5.2-.5.4 0 .6.9.7 1 2.2v2.9c0 .6-.1.7-.4.7-.8 0-2.6-2.8-3.7-5.5-.2-.5-.4-.7-.9-.7H4.9c-.6 0-.7.3-.7.6 0 .6.8 3.6 3.7 6.7 1.9 2 4.2 3 5.2 3.1Z"/>
+        </svg>
+      </a>
+
+    </div>
+  </div>
+
+  <div class="footer-bottom">
+    © 2026 Калифорния. Все права защищены.
+  </div>
+
+</footer>
+
+
+<!-- =========================================================
+     ПЛАВАЮЩАЯ КНОПКА КОРЗИНЫ ДЛЯ МОБИЛЬНЫХ
+     ========================================================= -->
+<button
+  type="button"
+  class="floating-cart"
+  id="floatingCartButton"
+  aria-label="Открыть корзину"
+>
+  <span class="floating-cart-icon">🛒</span>
+
+  <span class="floating-cart-info">
+    <strong>Корзина</strong>
+    <small id="floatingCartTotal">0 ₽</small>
+  </span>
+
+  <span class="floating-cart-count" id="floatingCartCount">0</span>
+</button>
+
+
+<!-- =========================================================
+     ЗАТЕМНЕНИЕ ЭКРАНА
+     ========================================================= -->
+<div class="modal-overlay" id="modalOverlay" aria-hidden="true"></div>
+
+
+<!-- =========================================================
+     МОДАЛЬНОЕ ОКНО КОРЗИНЫ
+     ========================================================= -->
+<div
+  class="cart-modal"
+  id="cartModal"
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="cartModalTitle"
+  aria-hidden="true"
+>
+
+  <div class="cart-modal-header">
+
+    <div>
+      <span class="section-kicker">Ваш заказ</span>
+      <h2 id="cartModalTitle">Корзина</h2>
+    </div>
+
+    <button
+      type="button"
+      class="modal-close-button"
+      id="closeCartButton"
+      aria-label="Закрыть корзину"
+    >
+      ×
+    </button>
+
+  </div>
+
+
+  <!-- ТОВАРЫ В КОРЗИНЕ -->
+  <div class="cart-items" id="cartItems"></div>
+
+
+  <!-- ПУСТАЯ КОРЗИНА -->
+  <div class="empty-cart" id="emptyCart">
+    <div class="empty-cart-icon">🥢</div>
+    <h3>Корзина пока пустая</h3>
+    <p>Добавьте что-нибудь вкусное из меню.</p>
+    <button
+      type="button"
+      class="white-button orange-text-button"
+      id="emptyCartMenuButton"
+    >
+      Перейти к меню
+    </button>
+  </div>
+
+
+  <!-- ИТОГ КОРЗИНЫ -->
+  <div class="cart-summary" id="cartSummary">
+
+    <div class="summary-row">
+      <span>Товары</span>
+      <strong id="cartSubtotal">0 ₽</strong>
+    </div>
+
+    <div class="summary-row">
+      <span>Доставка</span>
+      <strong id="cartDelivery">Рассчитаем после оформления</strong>
+    </div>
+
+    <div class="summary-total">
+      <span>Итого</span>
+      <strong id="cartTotal">0 ₽</strong>
+    </div>
+
+    <button
+      type="button"
+      class="checkout-button"
+      id="checkoutButton"
+    >
+      Оформить заказ
+    </button>
+
+  </div>
+
+</div>
+
+
+<!-- =========================================================
+     МОДАЛЬНОЕ ОКНО ОФОРМЛЕНИЯ ЗАКАЗА
+     ========================================================= -->
+<div
+  class="checkout-modal"
+  id="checkoutModal"
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="checkoutModalTitle"
+  aria-hidden="true"
+>
+
+  <div class="checkout-modal-header">
+
+    <div>
+      <span class="section-kicker">Последний шаг</span>
+      <h2 id="checkoutModalTitle">Оформление заказа</h2>
+    </div>
+
+    <button
+      type="button"
+      class="modal-close-button"
+      id="closeCheckoutButton"
+      aria-label="Закрыть оформление"
+    >
+      ×
+    </button>
+
+  </div>
+
+
+  <!-- ФОРМА ЗАКАЗА -->
+  <form class="checkout-form" id="checkoutForm">
+
+    <div class="form-group">
+      <label for="customerName">Ваше имя</label>
+      <input
+        type="text"
+        id="customerName"
+        name="name"
+        placeholder="Например, Иван"
+        autocomplete="name"
+        required
+      >
+    </div>
+
+
+    <div class="form-group">
+      <label for="customerPhone">Телефон</label>
+      <input
+        type="tel"
+        id="customerPhone"
+        name="phone"
+        placeholder="+7 (999) 123-45-67"
+        autocomplete="tel"
+        required
+      >
+    </div>
+
+
+    <div class="form-group">
+      <label for="customerAddress">Адрес доставки</label>
+      <textarea
+        id="customerAddress"
+        name="address"
+        rows="3"
+        placeholder="Улица, дом, квартира"
+        autocomplete="street-address"
+        required
+      ></textarea>
+    </div>
+
+
+    <div class="form-row">
+      <div class="form-group">
+        <label for="customerApartment">Квартира</label>
+        <input type="text" id="customerApartment" name="apartment" placeholder="25">
+      </div>
+
+      <div class="form-group">
+        <label for="customerEntrance">Подъезд</label>
+        <input type="text" id="customerEntrance" name="entrance" placeholder="2">
+      </div>
+    </div>
+
+
+    <div class="form-group">
+      <label for="customerComment">Комментарий к заказу</label>
+      <textarea
+        id="customerComment"
+        name="comment"
+        rows="3"
+        placeholder="Например: позвонить за 10 минут до приезда"
+      ></textarea>
+    </div>
+
+
+    <!-- ПРОМОКОД -->
+    <div class="promo-group">
+      <label for="promoCode">Промокод</label>
+      <div class="promo-input-row">
+        <input
+          type="text"
+          id="promoCode"
+          name="promo"
+          placeholder="Введите промокод"
+          autocomplete="off"
+        >
+        <button type="button" class="promo-button" id="applyPromoButton">
+          Применить
+        </button>
+      </div>
+      <small class="promo-message" id="promoMessage"></small>
+    </div>
+
+
+    <!-- СПОСОБ ОПЛАТЫ -->
+    <fieldset class="payment-fieldset">
+      <legend>Способ оплаты</legend>
+
+      <label class="radio-card">
+        <input type="radio" name="payment" value="cash" checked>
+        <span class="radio-card-content">
+          <strong>💵 Наличными</strong>
+          <small>Оплата курьеру</small>
+        </span>
+      </label>
+
+      <label class="radio-card">
+        <input type="radio" name="payment" value="card">
+        <span class="radio-card-content">
+          <strong>💳 Картой</strong>
+          <small>Оплата курьеру картой</small>
+        </span>
+      </label>
+    </fieldset>
+
+    <div
+      class="form-group change-from-group"
+      id="changeFromGroup"
+      style="display: none;"
+    >
+      <label for="changeFrom">
+        С какой суммы нужна сдача?
+      </label>
+
+      <input
+        type="number"
+        id="changeFrom"
+        name="changeFrom"
+        min="0"
+        step="1"
+        inputmode="numeric"
+        placeholder="Например, 500"
+      >
+
+      <small class="change-from-hint">
+        Укажите сумму, с которой курьер должен дать сдачу.
+      </small>
+    </div>
+    <!-- ФИНАЛЬНАЯ СУММА -->
+    <div class="checkout-total">
+      <span>К оплате</span>
+      <strong id="checkoutTotal">0 ₽</strong>
+    </div>
+
+    <button type="submit" class="submit-order-button">
+      Отправить заказ
+    </button>
+
+    <p class="form-note">
+      Нажимая кнопку «Отправить заказ», вы соглашаетесь
+      с обработкой данных, необходимых для выполнения заказа.
+    </p>
+
+  </form>
+
+</div>
+
+
+<!-- =========================================================
+     УВЕДОМЛЕНИЕ / TOAST
+     ========================================================= -->
+<div class="toast" id="toast" role="status" aria-live="polite">
+  <span id="toastMessage">Товар добавлен в корзину</span>
+</div>
+
+
+<!-- =========================================================
+     ПОДКЛЮЧЕНИЕ СКРИПТОВ
+     ========================================================= -->
+
+<script src="app.js"></script>
+
+</body>
+</html>
