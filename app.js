@@ -656,7 +656,7 @@ function ensureFulfillmentControls() {
       <input type="radio" name="fulfillmentType" value="pickup">
       <span class="radio-card-content">
         <strong>🏪 Самовывоз</strong>
-        <small>Забрать заказ из магазина</small>
+        <small>Забрать заказ по адресу ул. Мозаичная 44б</small>
       </span>
     </label>
   `;
