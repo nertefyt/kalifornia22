@@ -1,9 +1,9 @@
 {
-  "short_name": "",
-  "name": "",
+  "short_name": "Калифорния22-доставка суши в Барнауле",
+  "name": "Калифорния22",
   "icons": [{
-    "src": "icon.png",
-    "type": "image/png",
+    "src": "icon.jpg",
+    "type": "image/jpg",
     "sizes": "192x192"
   }],
   "start_url": "/?utm_source=homescreen",
