@@ -10,12 +10,9 @@
 
   node seed.js
 
-Скрипт безопасно пропускает категории/товары, которые уже
-существуют (по slug категории), поэтому его можно запускать
-повторно, не боясь задублировать данные.
-
-Отредактируй массив SEED_DATA ниже под реальное меню перед
-запуском на боевом сервере — здесь только пример структуры.
+Внимание: скрипт полностью очищает текущие таблицы базы данных
+(данные берутся из .env через модуль db.js) и заполняет их заново
+актуальными данными из массива SEED_DATA.
 */
 
 require("dotenv").config();
@@ -31,44 +28,57 @@ const SEED_DATA = [
     products: [
       {
         name: "Мини сет №1",
-        description: "Капа мака, филадельфия, эби темпура, запеченный с беконом | 920 г",
+        description: "Набор популярных роллов для небольшой компании",
+        composition: "Капа мака, филадельфия, эби темпура, запеченный с беконом",
+        weight: "920 г",
         price: 1550,
         imageUrl: "/img/min1.png"
       },
       {
         name: "Мини сет №3",
-        description: "Шанхай, ролл с жаренным лососем, фуджи, лосось темпура | 900 г",
+        description: "Сбалансированный набор с жареным лососем и темпурой",
+        composition: "Шанхай, ролл с жаренным лососем, фуджи, лосось темпура",
+        weight: "900 г",
         price: 1540,
         imageUrl: "/img/min3.png"
       },
       {
         name: "Сансет",
-        description: "Филадельфия лайт, бансай, лосось темпура, эби темпура, президент | 1250 г",
+        description: "Большой сет для любителей классических и темпура роллов",
+        composition: "Филадельфия лайт, бансай, лосось темпура, эби темпура, президент",
+        weight: "1250 г",
         price: 1950,
         imageUrl: "/img/suns.png"
       },
       {
         name: "Хот",
-        description: "Лосось темпура, запеченный с лососем, эби темпура, краб темпура, запеченный с креветкой | 1340 г",
+        description: "Ассорти из горячих и запеченных роллов",
+        composition: "Лосось темпура, запеченный с лососем, эби темпура, краб темпура, запеченный с креветкой",
+        weight: "1340 г",
         price: 2000,
         imageUrl: "/img/hot.png"
       },
       {
         name: "Свидание",
-        description: "Филадельфия, сяке маки, эби темпура, запеченный с крабом | 1000 г",
+        description: "Отличный вариант для уютного вечера вдвоем",
+        composition: "Филадельфия, сяке маки, эби темпура, запеченный с крабом",
+        weight: "1000 г",
         price: 1650,
         imageUrl: "/img/sv.png"
       },
       {
         name: "Макси",
-        description: "Л.темпура,э.темпура,ф.лайт,чука,сяке маки,бансай,техас,калифорния с лососем,\n" +
-          "капа маки,к.лайт | 2400 г",
+        description: "Огромный сет для большой компании",
+        composition: "Л.темпура, э.темпура, ф.лайт, чука, сяке маки, бансай, техас, калифорния с лососем, капа маки, к.лайт",
+        weight: "2400 г",
         price: 3700,
         imageUrl: "/img/mx.png"
       },
       {
         name: "Вайб",
-        description: "Филадельфия лайт, техас, президент, краб темпура, ролл с жаренным лососем, чука | 1450 г",
+        description: "Яркий и разнообразный сет роллов",
+        composition: "Филадельфия лайт, техас, президент, краб темпура, ролл с жаренным лососем, чука",
+        weight: "1450 г",
         price: 2100,
         imageUrl: "/img/vaib.png"
       }
@@ -85,229 +95,305 @@ const SEED_DATA = [
     products: [
       {
         name: "Ролл «Филадельфия XXL»",
-        description: "Состав: рис, нори, сливочный сыр, лосось | 520 г",
+        description: "Фирменный большой ролл с увеличенной порцией лосося",
+        composition: "рис, нори, сливочный сыр, лосось",
+        weight: "520 г | 1 штука",
         price: 1250,
         imageUrl: "/img/xxl.png"
       },
       {
         name: "Ролл «Дабл креветка»",
-        description: "Состав: рис, нори, сливочный сыр, огурец, двойная порция креветки | 260 г",
+        description: "Для любителей морепродуктов с двойной порцией креветки",
+        composition: "рис, нори, сливочный сыр, огурец, двойная порция креветки",
+        weight: "260 г",
         price: 560,
         imageUrl: "/img/double.png"
       },
       {
         name: "Ролл «Филадельфия Лайт»",
-        description: "Состав: рис, нори, сливочный сыр, огурец, лосось | 250 г",
+        description: "Легкая версия классической Филадельфии",
+        composition: "рис, нори, сливочный сыр, огурец, лосось",
+        weight: "250 г",
         price: 530,
         imageUrl: "/img/philadelphia-light.png"
       },
       {
         name: "Ролл «Филадельфия»",
-        description: "Состав: рис, нори, сливочный сыр, лосось | 250 г",
+        description: "Классический вкус с нежным лососем и сливочным сыром",
+        composition: "рис, нори, сливочный сыр, лосось",
+        weight: "250 г",
         price: 680,
         imageUrl: "/img/philadelphia.png"
       },
       {
         name: "Ролл «Филадельфия де-люкс»",
-        description: "Состав: рис, сливочный сыр, лосось | 260 г",
+        description: "Премиальная версия любимого ролла",
+        composition: "рис, сливочный сыр, лосось",
+        weight: "260 г",
         price: 950,
         imageUrl: "/img/philadelphia-deluxe.png"
       },
       {
         name: "Ролл «Филадельфия с тунцом»",
-        description: "Состав: рис, нори, сливочный сыр, тунец | 250 г",
+        description: "Альтернатива классике со свежим тунцом",
+        composition: "рис, нори, сливочный сыр, тунец",
+        weight: "250 г",
         price: 550,
         imageUrl: "/img/philadelphia-tuna.png"
       },
       {
         name: "Ролл «Канадский»",
-        description: "Состав: рис, нори, сыр, сливочный сыр, огурец, угорь, соус унаги, кунжут | 292 г",
+        description: "Изысканный ролл с копченым угром и соусом унаги",
+        composition: "рис, нори, сыр, сливочный сыр, огурец, угорь, соус унаги, кунжут",
+        weight: "292 г",
         price: 760,
         imageUrl: "/img/canadian.png"
       },
       {
         name: "Ролл «Канадский Лайт»",
-        description: "Состав: рис, нори, сливочный сыр, огурец, угорь, соус унаги, кунжут | 262 г",
+        description: "Облегченный вариант канадского ролла",
+        composition: "рис, нори, сливочный сыр, огурец, угорь, соус унаги, кунжут",
+        weight: "262 г",
         price: 550,
         imageUrl: "/img/canadian-light.png"
       },
       {
         name: "Ролл «Цезарь»",
-        description: "Состав: рис, нори, сливочный сыр, курица, томат | 230 г",
+        description: "Популярное сочетание ингредиентов в формате ролла",
+        composition: "рис, нори, сливочный сыр, курица, томат",
+        weight: "230 г",
         price: 370,
         imageUrl: "/img/cezar.png"
       },
       {
         name: "Ролл «Черная Калифорния с лососем»",
-        description: "Состав: рис, нори, сливочный сыр, огурец, лосось, икра | 240 г",
+        description: "Эффектный ролл в черной икре тобико",
+        composition: "рис, нори, сливочный сыр, огурец, лосось, икра",
+        weight: "240 г",
         price: 620,
         imageUrl: "/img/black-california-salmon.png"
       },
       {
         name: "Ролл «Калифорния с лососем»",
-        description: "Состав: рис, нори, сливочный сыр, огурец, лосось, икра | 240 г",
+        description: "Классическая Калифорния с лососем и икрой",
+        composition: "рис, нори, сливочный сыр, огурец, лосось, икра",
+        weight: "240 г",
         price: 620,
         imageUrl: "/img/california-salmon.png"
       },
       {
         name: "Ролл «Калифорния с креветкой»",
-        description: "Состав: рис, нори, сливочный сыр, авокадо, креветка, икра | 240 г",
+        description: "Нежный ролл с креветкой и авокадо",
+        composition: "рис, нори, сливочный сыр, авокадо, креветка, икра",
+        weight: "240 г",
         price: 620,
         imageUrl: "/img/california-shrimp.png"
       },
       {
         name: "Ролл «Черный лосось»",
-        description: "Состав: рис, нори, лосось, икра | 170 г",
+        description: "Изысканный мини-ролл с лососем",
+        composition: "рис, нори, лосось, икра",
+        weight: "170 г",
         price: 600,
         imageUrl: "/img/black-salmon.png"
       },
       {
         name: "Ролл «Бостон»",
-        description: "Состав: рис, нори, сливочный сыр, лосось, угорь, салат Айсберг, икра | 245 г",
+        description: "Сытный ролл с лососем, угрем и салатом Айсберг",
+        composition: "рис, нори, сливочный сыр, лосось, угорь, салат Айсберг, икра",
+        weight: "245 г",
         price: 620,
         imageUrl: "/img/boston.png"
       },
       {
         name: "Ролл «Сяке Маки»",
-        description: "Состав: рис, сливочный сыр, нори, лосось | 200 г",
+        description: "Простой и вкусный моно-ролл с лососем",
+        composition: "рис, сливочный сыр, нори, лосось",
+        weight: "200 г",
         price: 390,
         imageUrl: "/img/syake-maki.png"
       },
       {
         name: "Ролл «Чука»",
-        description: "Состав: рис, нори, сливочный сыр, чука, ореховый соус, кунжут | 212 г",
+        description: "Полезный ролл с водорослями чука и ореховым соусом",
+        composition: "рис, нори, сливочный сыр, чука, ореховый соус, кунжут",
+        weight: "212 г",
         price: 300,
         imageUrl: "/img/chuka.png"
       },
       {
         name: "Ролл «Техас»",
-        description: "Состав: рис, нори, сливочный сыр, курица, помидор, кунжут | 235 г",
+        description: "Мясной ролл с курочкой и томатами",
+        composition: "рис, нори, сливочный сыр, курица, помидор, кунжут",
+        weight: "235 г",
         price: 350,
         imageUrl: "/img/texas.png"
       },
       {
         name: "Ролл «Бансай»",
-        description: "Состав: рис, нори, сливочный сыр, огурец, томат, бекон | 270 г",
+        description: "Сытный ролл с беконом и овощами",
+        composition: "рис, нори, сливочный сыр, огурец, томат, бекон",
+        weight: "270 г",
         price: 400,
         imageUrl: "/img/bonsai.png"
       },
       {
         name: "Ролл «Бруклин»",
-        description: "Состав: рис, нори, сливочный сыр, томат, бекон, кунжут | 242 г",
+        description: "Оригинальное сочетание бекона и томатов",
+        composition: "рис, нори, сливочный сыр, томат, бекон, кунжут",
+        weight: "242 г",
         price: 380,
         imageUrl: "/img/brooklin.png"
       },
       {
         name: "Ролл «Капа Маки»",
-        description: "Состав: нори, рис, огурец | 170 г",
+        description: "Классический легкий ролл с огурцом",
+        composition: "нори, рис, огурец",
+        weight: "170 г",
         price: 200,
         imageUrl: "/img/kappa-maki.png"
       },
       {
         name: "Ролл «Фурай»",
-        description: "Состав: рис, нори, сливочный сыр, лосось, огурец, соус унаги | 240 г",
+        description: "Ролл с лососем и соусом унаги",
+        composition: "рис, нори, сливочный сыр, лосось, огурец, соус унаги",
+        weight: "240 г",
         price: 530,
         imageUrl: "/img/furai.png"
       },
       {
         name: "Ролл «Море креветок»",
-        description: "Состав: рис, нори, сливочный сыр, креветка, двойная порция, унаги | 230 г",
+        description: "Максимум креветок в одном ролле",
+        composition: "рис, нори, сливочный сыр, креветка, двойная порция, унаги",
+        weight: "230 г",
         price: 600,
         imageUrl: "/img/more-krevetok.png"
       },
       {
         name: "Ролл «Сырный цыпленок»",
-        description: "Состав: рис, нори, сливочный сыр, лук, курица, сырная шапочка | 260 г",
+        description: "Нежный ролл под аппетитной сырной шапочкой",
+        composition: "рис, нори, сливочный сыр, лук, курица, сырная шапочка",
+        weight: "260 г",
         price: 450,
         imageUrl: "/img/cheesy-chicken.png"
       },
       {
         name: "Ролл «Лава премиум»",
-        description: "Состав: рис, нори, огурец, креветка, икра, майонез | 220 г",
+        description: "Премиальный вариант с креветкой и фирменным соусом",
+        composition: "рис, нори, огурец, креветка, икра, майонез",
+        weight: "220 г",
         price: 490,
         imageUrl: "/img/lava.png"
       },
       {
         name: "Ролл «Калифорния с угрем»",
-        description: "Состав: рис, нори, сливочный сыр, огурец, угорь, соус унаги, кунжут | 235 г",
+        description: "Вариант Калифорнии с копченым угрем",
+        composition: "рис, нори, сливочный сыр, огурец, угорь, соус унаги, кунжут",
+        weight: "235 г",
         price: 550,
         imageUrl: "/img/california-eel.png"
       },
       {
         name: "Ролл «Президент»",
-        description: "Состав: рис, нори, сливочный сыр, лук, тостерный сыр, острый майонез | 230 г",
+        description: "Пикантный ролл с тостерным сыром и острым майонезом",
+        composition: "рис, нори, сливочный сыр, лук, тостерный сыр, острый майонез",
+        weight: "230 г",
         price: 300,
         imageUrl: "/img/president.png"
       },
       {
         name: "Ролл «Имбирная креветка»",
-        description: "Состав: рис, нори, сливочный сыр, огурец, имбирь, креветка, соус унаги | 260 г",
+        description: "Интересное сочетание креветки и пикантного имбиря",
+        composition: "рис, нори, сливочный сыр, огурец, имбирь, креветка, соус унаги",
+        weight: "260 г",
         price: 530,
         imageUrl: "/img/ginger-shrimp.png"
       },
       {
         name: "Ролл «Эби Филадельфия»",
-        description: "Состав: рис, нори, сливочный сыр, креветка, соус унаги | 250 г",
+        description: "Филадельфия с нежной креветкой",
+        composition: "рис, нори, сливочный сыр, креветка, соус унаги",
+        weight: "250 г",
         price: 560,
         imageUrl: "/img/ebi-philadelphia.png"
       },
       {
         name: "Ролл «Бонито»",
-        description: "Состав: рис, нори, сливочный сыр, огурец, жареный лосось, стружка тунца | 227 г",
+        description: "Ролл в ароматной стружке тунца",
+        composition: "рис, нори, сливочный сыр, огурец, жареный лосось, стружка тунца",
+        weight: "227 г",
         price: 400,
         imageUrl: "/img/bonito.png"
       },
       {
         name: "Ролл «Спайси лосось»",
-        description: "Состав: рис, нори, сливочный сыр, авокадо, креветка, лосось, соус унаги, соус спайси, лук | 270 г",
+        description: "Острый ролл с лососем и креветкой",
+        composition: "рис, нори, сливочный сыр, авокадо, креветка, лосось, соус унаги, соус спайси, лук",
+        weight: "270 г",
         price: 680,
         imageUrl: "/img/spicy-salmon.png"
       },
       {
         name: "Ролл «Криспи»",
-        description: "Состав: сливочный сыр, жареный лосось, огурец, карамелизированный лук, спайси соус, унаги соус | 230 г",
+        description: "Хрустящий ролл с карамелизированным луком и спайси соусом",
+        composition: "сливочный сыр, жареный лосось, огурец, карамелизированный лук, спайси соус, унаги соус",
+        weight: "230 г",
         price: 450,
         imageUrl: "/img/krispi.png"
       },
       {
         name: "Ролл «Ханнай»",
-        description: "Состав: сливочный сыр, авокадо, лосось, черная тобико | 230 г",
+        description: "Изысканный ролл с лососем и черной тобико",
+        composition: "сливочный сыр, авокадо, лосось, черная тобико",
+        weight: "230 г",
         price: 620,
         imageUrl: "/img/hannai.png"
       },
       {
         name: "Ролл «Унаги Чиз»",
-        description: "Состав: сливочный сыр, угорь, рыжая тобико | 210 г",
+        description: "Сырный ролл с угром и рыжей тобико",
+        composition: "сливочный сыр, угорь, рыжая тобико",
+        weight: "210 г",
         price: 490,
         imageUrl: "/img/unagi-cheese.png"
       },
       {
         name: "Ролл «Филадельфия с креветкой»",
-        description: "Состав: лосось, креветка тигровая, сыр сливочный | 270 г",
+        description: "Комбинация лосося, тигровой креветки и сливочного сыра",
+        composition: "лосось, креветка тигровая, сыр сливочный",
+        weight: "270 г",
         price: 850,
         imageUrl: "/img/philadelphia-shrimp.png"
       },
       {
         name: "Ролл «Канадский премиум»",
-        description: "Состав: сыр сливочный, лосось, авокадо, угорь, унаги соус, тобика рыжая | 290 г",
+        description: "Премиальный вариант канадского ролла с авокадо и угрем",
+        composition: "сыр сливочный, лосось, авокадо, угорь, унаги соус, тобика рыжая",
+        weight: "290 г",
         price: 1050,
         imageUrl: "/img/canadian-premium.png"
       },
       {
         name: "Ролл «Креветка-манго»",
-        description: "Состав: креветка тигровая в панировке, сыр сливочный, манго, авокадо, тобика рыжая | 260 г",
+        description: "Экзотический ролл с тигровой креветкой в панировке и манго",
+        composition: "креветка тигровая в панировке, сыр сливочный, манго, авокадо, тобика рыжая",
+        weight: "260 г",
         price: 550,
         imageUrl: "/img/shrimp-mango.png"
       },
       {
         name: "Ролл «Самурай»",
-        description: "Состав: сливочный сыр, лосось, манго | 220 г",
+        description: "Нежное сочетание сливочного сыра, лосося и манго",
+        composition: "сливочный сыр, лосось, манго",
+        weight: "220 г",
         price: 530,
         imageUrl: "/img/samurai.png"
       },
       {
         name: "Ролл «Гейша»",
-        description: "Состав: сладкий ролл, сливочный сыр, шоколадный блин, киви, груша, банан, шоколадный топинг | 340 г",
+        description: "Сладкий десертный ролл с фруктами и шоколадным топингом",
+        composition: "сладкий ролл, сливочный сыр, шоколадный блин, киви, груша, банан, шоколадный топинг",
+        weight: "340 г",
         price: 660,
         imageUrl: "/img/geisha.png"
       }
@@ -324,37 +410,49 @@ const SEED_DATA = [
     products: [
       {
         name: "Ролл «Запеченный с крабом»",
-        description: "Состав: рис, нори, огурец, снежный краб | 270 г",
+        description: "Горячий ролл под фирменным запеченным соусом со снежным крабом",
+        composition: "рис, нори, огурец, снежный краб",
+        weight: "270 г",
         price: 400,
         imageUrl: "/img/baked-crab.png"
       },
       {
         name: "Ролл «Запеченный с курицей»",
-        description: "Состав: рис, нори, огурец, курица | 240 г",
+        description: "Сытный запеченный ролл с куриным филе",
+        composition: "рис, нори, огурец, курица",
+        weight: "240 г",
         price: 400,
         imageUrl: "/img/baked-chicken.png"
       },
       {
         name: "Ролл «Запеченный с угрем»",
-        description: "Состав: рис, нори, огурец, угорь | 240 г",
+        description: "Изысканный запеченный ролл с копченым угром",
+        composition: "рис, нори, огурец, угорь",
+        weight: "240 г",
         price: 500,
         imageUrl: "/img/baked-ug.png"
       },
       {
         name: "Ролл «Запеченный с креветкой»",
-        description: "Состав: нори, рис, огурец, креветка | 250 г",
+        description: "Запеченный ролл с сочной креветкой",
+        composition: "нори, рис, огурец, креветка",
+        weight: "250 г",
         price: 500,
         imageUrl: "/img/baked-shrimp.png"
       },
       {
         name: "Ролл «Запеченный с лососем»",
-        description: "Состав: рис, нори, огурец, лосось | 250 г",
+        description: "Классический запеченный ролл с кусочками лосося",
+        composition: "рис, нори, огурец, лосось",
+        weight: "250 г",
         price: 500,
         imageUrl: "/img/baked-salmon.png"
       },
       {
         name: "Ролл «Запеченный с тунцом»",
-        description: "Состав: нори, рис, огурец, тунец | 250 г",
+        description: "Запеченный ролл с нежным тунцом",
+        composition: "нори, рис, огурец, тунец",
+        weight: "250 г",
         price: 500,
         imageUrl: "/img/baked-tuna.png"
       }
@@ -371,25 +469,33 @@ const SEED_DATA = [
     products: [
       {
         name: "Ролл «Эби темпура»",
-        description: "Состав: рис, нори, сливочный сыр, креветка, огурец, соус унаги | 270 г",
+        description: "Хрустящий ролл в кляре темпура с тигровой креветкой",
+        composition: "рис, нори, сливочный сыр, креветка, огурец, соус унаги",
+        weight: "270 г",
         price: 420,
         imageUrl: "/img/ebi-tempura.png"
       },
       {
         name: "Ролл «Лосось темпура»",
-        description: "Состав: рис, нори, сливочный сыр, огурец, лосось | 270 г",
+        description: "Горячий хрустящий ролл с лососем",
+        composition: "рис, нори, сливочный сыр, огурец, лосось",
+        weight: "270 г",
         price: 440,
         imageUrl: "/img/salmon-tempura.png"
       },
       {
         name: "Ролл «Краб темпура»",
-        description: "Состав: рис, нори, сливочный сыр, огурец, снежный краб | 280 г",
+        description: "Темпура ролл со снежным крабом",
+        composition: "рис, нори, сливочный сыр, огурец, снежный краб",
+        weight: "280 г",
         price: 380,
         imageUrl: "/img/crab-tempura.png"
       },
       {
         name: "Ролл «Бонито темпура»",
-        description: "Состав: рис, нори, сливочный сыр, огурец, жареный лосось, кляр, соус унаги, спайси соус, лук | 310 г",
+        description: "Хрустящий темпура ролл с жареным лососем и стружкой тунца",
+        composition: "рис, нори, сливочный сыр, огурец, жареный лосось, кляр, соус унаги, спайси соус, лук",
+        weight: "310 г",
         price: 420,
         imageUrl: "/img/bonito-tempura.png"
       }
@@ -406,25 +512,33 @@ const SEED_DATA = [
     products: [
       {
         name: "Онигири с лососем",
-        description: "Состав: рис, нори, лосось, лист салата, томат, острый соус, унаги соус | 200 г",
+        description: "Японский рисовый треугольник с начинкой из лосося",
+        composition: "рис, нори, лосось, лист салата, томат, острый соус, унаги соус",
+        weight: "200 г",
         price: 380,
         imageUrl: "/img/onigiri-salmon.png"
       },
       {
         name: "Онигири с курицей",
-        description: "Состав: рис, нори, курица, сыр, томат, унаги соус | 210 г",
+        description: "Сытный онигири с куриным филе и сыром",
+        composition: "рис, нори, курица, сыр, томат, унаги соус",
+        weight: "210 г",
         price: 380,
         imageUrl: "/img/onigiri-ch.png"
       },
       {
         name: "Онигири с угрем",
-        description: "Состав: рис, нори, угорь, лист салата, томат, острый соус, унаги соус | 200 г",
+        description: "Онигири с копченым угром и пикантным соусом",
+        composition: "рис, нори, угорь, лист салата, томат, острый соус, унаги соус",
+        weight: "200 г",
         price: 380,
         imageUrl: "/img/onigiri-ug.png"
       },
       {
         name: "Онигири с креветкой",
-        description: "Состав: рис, нори, креветка, томат, лист салата, острый соус, унаги соус | 200 г",
+        description: "Онигири с сочной креветкой и овощами",
+        composition: "рис, нори, креветка, томат, лист салата, острый соус, унаги соус",
+        weight: "200 г",
         price: 380,
         imageUrl: "/img/onigiri-shrimp.png"
       }
@@ -441,13 +555,17 @@ const SEED_DATA = [
     products: [
       {
         name: "Картофель фри",
-        description: "200 г",
+        description: "Хрустящий золотистый картофель фри",
+        composition: "картофель, специи",
+        weight: "200 г",
         price: 180,
         imageUrl: "/img/french-fries.png"
       },
       {
         name: "Наггетсы",
-        description: "7 штук",
+        description: "Сочные куриные наггетсы в хрустящей панировке",
+        composition: "куриное филе, панировка",
+        weight: "7 штук",
         price: 250,
         imageUrl: "/img/nuggets.png"
       }
@@ -464,13 +582,17 @@ const SEED_DATA = [
     products: [
       {
         name: "Том ям с креветкой",
-        description: "Состав: рис (отдельно в судочке), бульон, креветка, шампиньоны, черри, кинза | 350 г",
+        description: "Традиционный острый тайский суп с креветками и грибами",
+        composition: "рис (отдельно в судочке), бульон, креветка, шампиньоны, черри, кинза",
+        weight: "350 г",
         price: 560,
         imageUrl: "/img/tom-yum-shrimp.png"
       },
       {
         name: "Том ям с курицей",
-        description: "Состав: рис (отдельно в судочке), бульон, курица, шампиньоны, черри, кинза | 350 г",
+        description: "Традиционный острый тайский суп с курицей и грибами",
+        composition: "рис (отдельно в судочке), бульон, курица, шампиньоны, черри, кинза",
+        weight: "350 г",
         price: 460,
         imageUrl: "/img/tom-yum-chicken.png"
       }
@@ -480,67 +602,57 @@ const SEED_DATA = [
 
 
 async function seed() {
-  console.log("🌱 Наполняем базу стартовыми данными...\n");
+  console.log("🗑️ Очищаем старые данные базы данных...\n");
 
   await db.initSchema();
 
+  // Полная очистка таблиц продуктов и категорий перед заполнением
+  // CASCADE гарантирует корректную работу со связями внешних ключей
+  await db.pool.query("TRUNCATE TABLE products, categories RESTART IDENTITY CASCADE;");
+  console.log("✓ Таблицы успешно очищены.\n");
+
+  console.log("🌱 Наполняем базу новыми данными...\n");
+
   for (const categoryData of SEED_DATA) {
-    let category = await menuStore.findCategoryBySlug(categoryData.slug);
+    const result = await menuStore.addCategory({
+      name: categoryData.name,
+      slug: categoryData.slug,
+      sortOrder: categoryData.sortOrder
+    });
 
-    if (category) {
-      console.log(`↷ Категория "${categoryData.name}" уже существует, пропускаем создание.`);
-    } else {
-      const result = await menuStore.addCategory({
-        name: categoryData.name,
-        slug: categoryData.slug,
-        sortOrder: categoryData.sortOrder
-      });
-
-      if (!result.success) {
-        console.error(`✗ Не удалось создать категорию "${categoryData.name}": ${result.reason}`);
-        continue;
-      }
-
-      category = result.category;
-      console.log(`✓ Создана категория "${category.name}" (id ${category.id})`);
+    if (!result.success) {
+      console.error(`✗ Не удалось создать категорию "${categoryData.name}": ${result.reason}`);
+      continue;
     }
 
-    const existingProducts = await menuStore.listProducts();
+    const category = result.category;
+    console.log(`✓ Создана категория "${category.name}" (id ${category.id})`);
 
     for (const productData of categoryData.products) {
-      const alreadyExists = existingProducts.some(
-        product =>
-          product.categoryId === category.id &&
-          product.name === productData.name
-      );
-
-      if (alreadyExists) {
-        console.log(`  ↷ Товар "${productData.name}" уже существует, пропускаем.`);
-        continue;
-      }
-
-      const result = await menuStore.addProduct({
+      const productResult = await menuStore.addProduct({
         categoryId: category.id,
         name: productData.name,
         description: productData.description,
+        composition: productData.composition,
+        weight: productData.weight,
         price: productData.price,
         imageUrl: productData.imageUrl
       });
 
-      if (result.success) {
+      if (productResult.success) {
         console.log(`  ✓ Добавлен товар "${productData.name}" — ${productData.price}₽`);
       } else {
-        console.error(`  ✗ Не удалось добавить товар "${productData.name}": ${result.reason}`);
+        console.error(`  ✗ Не удалось добавить товар "${productData.name}": ${productResult.reason}`);
       }
     }
   }
 
-  console.log("\n🌱 Готово.");
+  console.log("\n🌱 База данных успешно очищена и заполнена заново.");
 
   await db.pool.end();
 }
 
 seed().catch(error => {
-  console.error("Ошибка при наполнении БД:", error);
+  console.error("Ошибка при очистке и наполнении БД:", error);
   process.exit(1);
 });

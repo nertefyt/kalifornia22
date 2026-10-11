@@ -11,13 +11,10 @@
    1. КОНФИГУРАЦИЯ ПРИЛОЖЕНИЯ
    ============================================================ */
 
-/* ============================================================
-   1. КОНФИГУРАЦИЯ ПРИЛОЖЕНИЯ
-   ============================================================ */
-
 const APP_CONFIG = {
   storageKey: "sushi_shop_cart_v1",
   menuApiUrl: "/api/menu",
+  productApiUrl: "/api/products",
   promoApiUrl: "/api/promo/validate",
   checkoutApiUrl: "/api/checkout",
   yandexMaps: {
@@ -201,9 +198,10 @@ async function loadMenuFromServer() {
         description: product.description,
         price: product.price,
         image: product.imageUrl,
+        weight: product.weight,
         available: product.isActive !== false
-        // badge и weight в текущей схеме БД нет — карточка
-        // товара просто не покажет эти необязательные элементы.
+        // badge в текущей схеме БД нет — карточка просто не покажет
+        // этот необязательный элемент.
       }))
     );
 
@@ -304,7 +302,6 @@ function createProductCard(product) {
     </div>
     <div class="product-content">
       <h3 class="product-title">${escapeHtml(product.name)}</h3>
-      <p class="product-description">${escapeHtml(product.description || product.composition || "")}</p>
       ${product.weight ? `<div class="product-weight">${escapeHtml(product.weight)}</div>` : ""}
       <div class="product-footer">
         <strong class="product-price">${formatPrice(product.price)}</strong>
@@ -318,13 +315,240 @@ function createProductCard(product) {
 }
 
 function handleMenuClick(event) {
-  const button = event.target.closest(".add-to-cart-button");
-  if (!button) return;
-  addToCart(button.dataset.productId);
+  const addButton = event.target.closest(".add-to-cart-button");
+  if (addButton) {
+    addToCart(addButton.dataset.productId);
+    return;
+  }
+
+  /*
+   * Клик по карточке где угодно, кроме кнопки "в корзину" —
+   * открывает отдельную страницу товара (состав, описание).
+   * Работает и для недоступных товаров (available: false) —
+   * посмотреть состав можно, добавить в корзину нельзя
+   * (кнопка внутри карточки товара тоже задизейблена).
+   */
+  const card = event.target.closest(".product-card");
+  if (card) {
+    openProductDetail(card.dataset.productId);
+  }
 }
 
 /* ============================================================
-   8. НАВИГАЦИЯ ПО КАТЕГОРИЯМ
+   8А. СТРАНИЦА ТОВАРА (состав, описание, добавление в корзину)
+   ============================================================ */
+
+/*
+ * Отдельная "страница" товара сделана как модалка поверх меню —
+ * тем же способом, каким уже сделаны модалки корзины и чекаута
+ * (переиспользует .modal-close-button, .modal-overlay и т.д. из
+ * styles.css). Технически это не отдельный HTML-файл, а один
+ * переиспользуемый блок: при открытии в него подставляются данные
+ * конкретного товара, при закрытии — просто прячется.
+ *
+ * URL при открытии получает вид #product-123 — так на товар можно
+ * дать прямую ссылку, и кнопка "назад" в браузере закрывает
+ * карточку (см. hashchange ниже), а не уводит со всего сайта.
+ */
+
+let currentProductDetailId = null;
+
+function ensureProductModal() {
+  if (document.getElementById("productModal")) return;
+
+  const modal = document.createElement("div");
+  modal.className = "product-modal";
+  modal.id = "productModal";
+  modal.setAttribute("aria-hidden", "true");
+  modal.innerHTML = `
+    <div class="cart-modal-header">
+      <h2 id="productModalTitle">Товар</h2>
+      <button type="button" class="modal-close-button" id="closeProductModalButton" aria-label="Закрыть">×</button>
+    </div>
+    <div class="product-modal-body">
+      <div class="product-modal-image" id="productModalImage">
+        <div class="product-image-placeholder" aria-hidden="true">🍣</div>
+      </div>
+      <div class="product-modal-content">
+        <div class="product-modal-meta">
+          <strong class="product-modal-price" id="productModalPrice"></strong>
+          <span class="product-modal-weight" id="productModalWeight" hidden></span>
+        </div>
+        <div class="product-modal-section">
+          <h3>Описание</h3>
+          <p id="productModalDescription">—</p>
+        </div>
+        <div class="product-modal-section" id="productModalCompositionSection">
+          <h3>Состав</h3>
+          <p id="productModalComposition">—</p>
+        </div>
+        <p class="product-modal-unavailable" id="productModalUnavailable" hidden>
+          Сейчас этого товара нет в наличии.
+        </p>
+      </div>
+    </div>
+    <div class="product-modal-footer">
+      <div class="cart-item-controls" id="productModalStepper">
+        <button type="button" class="quantity-button" id="productModalDecrease" aria-label="Уменьшить количество">−</button>
+        <span id="productModalQuantity">1</span>
+        <button type="button" class="quantity-button" id="productModalIncrease" aria-label="Увеличить количество">+</button>
+      </div>
+      <button type="button" class="add-to-cart-button" id="productModalAddButton">В корзину</button>
+    </div>
+  `;
+
+  document.body.appendChild(modal);
+
+  document.getElementById("closeProductModalButton").addEventListener("click", closeProductDetail);
+  document.getElementById("productModalIncrease").addEventListener("click", () => changeProductModalQuantity(1));
+  document.getElementById("productModalDecrease").addEventListener("click", () => changeProductModalQuantity(-1));
+  document.getElementById("productModalAddButton").addEventListener("click", handleProductModalAddToCart);
+}
+
+function changeProductModalQuantity(delta) {
+  const span = document.getElementById("productModalQuantity");
+  if (!span) return;
+  const next = Math.max(1, Math.min(99, Number(span.textContent) + delta));
+  span.textContent = String(next);
+}
+
+function handleProductModalAddToCart() {
+  if (!currentProductDetailId) return;
+  const quantity = Number(document.getElementById("productModalQuantity")?.textContent) || 1;
+
+  for (let i = 0; i < quantity; i++) {
+    addToCart(currentProductDetailId);
+  }
+
+  closeProductDetail();
+  openCart();
+}
+
+/*
+ * id товара может прийти и строкой (клик по карточке,
+ * dataset всегда строка), и числом (из хэша при прямой ссылке) —
+ * продукт в menuData всегда хранится с id-строкой (см.
+ * loadMenuFromServer), поэтому здесь всегда приводим к строке.
+ */
+async function openProductDetail(productId) {
+  ensureProductModal();
+  const id = String(productId);
+  currentProductDetailId = id;
+
+  const modal = document.getElementById("productModal");
+  if (!modal) return;
+
+  if (window.location.hash !== `#product-${id}`) {
+    window.location.hash = `product-${id}`;
+  }
+
+  modal.classList.add("modal-visible");
+  modal.setAttribute("aria-hidden", "false");
+  DOM.modalOverlay?.classList.add("overlay-visible");
+  document.body.classList.add("modal-open");
+
+  document.getElementById("productModalQuantity").textContent = "1";
+
+  /*
+   * Сначала показываем то, что уже есть в memoData (мгновенно,
+   * без сетевого запроса) — у неё уже есть name/price/description
+   * из общего /api/menu. Состав (composition) в неё при желании
+   * можно не грузить отдельно: сверху "дотягиваем" полную карточку
+   * через /api/products/:id, которая его отдаёт гарантированно.
+   */
+  const cachedProduct = getProductById(id);
+  if (cachedProduct) {
+    renderProductModal(cachedProduct);
+  }
+
+  try {
+    const response = await fetch(`${APP_CONFIG.productApiUrl}/${encodeURIComponent(id)}`);
+    let data = null;
+    try { data = await response.json(); } catch { data = null; }
+
+    if (response.ok && data?.success && data.product) {
+      renderProductModal({
+        id: String(data.product.id),
+        name: data.product.name,
+        description: data.product.description,
+        composition: data.product.composition,
+        weight: data.product.weight,
+        price: data.product.price,
+        image: data.product.imageUrl,
+        available: data.product.isActive !== false
+      });
+    } else if (!cachedProduct) {
+      showToast(data?.message || "Не удалось загрузить товар.");
+      closeProductDetail();
+    }
+  } catch (error) {
+    console.error("Не удалось загрузить карточку товара:", error);
+    // cachedProduct уже показан — если его не было, просто молчим,
+    // не дублируем toast поверх уже показанного выше.
+  }
+}
+
+function renderProductModal(product) {
+  if (!product || String(product.id) !== currentProductDetailId) return;
+
+  document.getElementById("productModalTitle").textContent = product.name || "Товар";
+  document.getElementById("productModalPrice").textContent = formatPrice(product.price);
+
+  const weightEl = document.getElementById("productModalWeight");
+  if (product.weight) {
+    weightEl.textContent = product.weight;
+    weightEl.hidden = false;
+  } else {
+    weightEl.hidden = true;
+  }
+  document.getElementById("productModalDescription").textContent = product.description || "Без описания.";
+
+  const compositionSection = document.getElementById("productModalCompositionSection");
+  if (product.composition) {
+    compositionSection.hidden = false;
+    document.getElementById("productModalComposition").textContent = product.composition;
+  } else {
+    compositionSection.hidden = true;
+  }
+
+  const imageContainer = document.getElementById("productModalImage");
+  imageContainer.innerHTML = product.image
+    ? `<img src="${escapeHtml(product.image)}" alt="${escapeHtml(product.name)}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+       <div class="product-image-placeholder" style="display:none;" aria-hidden="true">🍣</div>`
+    : `<div class="product-image-placeholder" aria-hidden="true">🍣</div>`;
+
+  const isAvailable = product.available !== false;
+  document.getElementById("productModalUnavailable").hidden = isAvailable;
+  document.getElementById("productModalStepper").style.display = isAvailable ? "" : "none";
+
+  const addButton = document.getElementById("productModalAddButton");
+  addButton.disabled = !isAvailable;
+  addButton.textContent = isAvailable ? "В корзину" : "Недоступно";
+}
+
+function closeProductDetail() {
+  const modal = document.getElementById("productModal");
+  if (!modal) return;
+
+  modal.classList.remove("modal-visible");
+  modal.setAttribute("aria-hidden", "true");
+  currentProductDetailId = null;
+  closeOverlayIfNecessary();
+
+  if (window.location.hash.startsWith("#product-")) {
+    history.replaceState(null, "", window.location.pathname + window.location.search);
+  }
+}
+
+function restoreProductFromHash() {
+  const hash = window.location.hash;
+  if (!hash.startsWith("#product-")) return;
+  const productId = decodeURIComponent(hash.replace("#product-", ""));
+  openProductDetail(productId);
+}
+
+/* ============================================================
+   9. НАВИГАЦИЯ ПО КАТЕГОРИЯМ
    ============================================================ */
 
 function handleCategoryNavigation(event) {
@@ -370,7 +594,7 @@ function initCategoryObserver() {
 }
 
 /* ============================================================
-   9. LOCAL STORAGE
+   10. LOCAL STORAGE
    ============================================================ */
 
 function saveCartToStorage() {
@@ -401,7 +625,7 @@ function loadCartFromStorage() {
 }
 
 /* ============================================================
-   10. КОРЗИНА
+   11. КОРЗИНА
    ============================================================ */
 
 function addToCart(productId) {
@@ -471,7 +695,7 @@ function getCartTotal() {
 }
 
 /* ============================================================
-   11. ОТРИСОВКА КОРЗИНЫ
+   12. ОТРИСОВКА КОРЗИНЫ
    ============================================================ */
 
 function updateCartUI() {
@@ -570,7 +794,7 @@ function renderDiscountRow(discount) {
 }
 
 /* ============================================================
-   12. МОДАЛЬНЫЕ ОКНА
+   13. МОДАЛЬНЫЕ ОКНА
    ============================================================ */
 
 function openCart() {
@@ -616,8 +840,9 @@ function closeCheckout() {
 function closeOverlayIfNecessary() {
   const cartVisible = DOM.cartModal?.classList.contains("modal-visible");
   const checkoutVisible = DOM.checkoutModal?.classList.contains("modal-visible");
+  const productVisible = document.getElementById("productModal")?.classList.contains("modal-visible");
 
-  if (!cartVisible && !checkoutVisible) {
+  if (!cartVisible && !checkoutVisible && !productVisible) {
     DOM.modalOverlay?.classList.remove("overlay-visible");
     document.body.classList.remove("modal-open");
   }
@@ -630,10 +855,14 @@ function closeAllModals() {
   DOM.cartModal?.setAttribute("aria-hidden", "true");
   DOM.checkoutModal?.setAttribute("aria-hidden", "true");
   document.body.classList.remove("modal-open");
+
+  if (document.getElementById("productModal")) {
+    closeProductDetail();
+  }
 }
 
 /* ============================================================
-   13. СПОСОБ ПОЛУЧЕНИЯ
+   14. СПОСОБ ПОЛУЧЕНИЯ
    ============================================================ */
 
 function ensureFulfillmentControls() {
@@ -656,7 +885,7 @@ function ensureFulfillmentControls() {
       <input type="radio" name="fulfillmentType" value="pickup">
       <span class="radio-card-content">
         <strong>🏪 Самовывоз</strong>
-        <small>Забрать заказ по адресу ул. Мозаичная 44б</small>
+        <small>Забрать заказ из магазина</small>
       </span>
     </label>
   `;
@@ -723,7 +952,7 @@ function updateCheckoutFormState() {
 }
 
 /* ============================================================
-   14. ПРОМОКОДЫ
+   15. ПРОМОКОДЫ
    ============================================================ */
 
 function clearPromo() {
@@ -809,7 +1038,7 @@ function setPromoButtonLoading(loading) {
 }
 
 /* ============================================================
-   15. ВАЛИДАЦИЯ ФОРМЫ
+   16. ВАЛИДАЦИЯ ФОРМЫ
    ============================================================ */
 
 function clearFormErrors() {
@@ -888,7 +1117,7 @@ function validateCheckoutForm() {
 }
 
 /* ============================================================
-   16. ФОРМИРОВАНИЕ ЗАКАЗА
+   17. ФОРМИРОВАНИЕ ЗАКАЗА
    ============================================================ */
 
 function buildCheckoutPayload() {
@@ -940,7 +1169,7 @@ function buildCheckoutPayload() {
 }
 
 /* ============================================================
-   17. ОТПРАВКА ЗАКАЗА
+   18. ОТПРАВКА ЗАКАЗА
    ============================================================ */
 
 function setCheckoutButtonLoading(loading) {
@@ -1001,7 +1230,7 @@ async function submitCheckout(event) {
 }
 
 /* ============================================================
-   18. ЯНДЕКС.КАРТЫ
+   19. ЯНДЕКС.КАРТЫ
    ============================================================ */
 
 function renderMapPlaceholder(message) {
@@ -1100,7 +1329,7 @@ async function initYandexMap() {
 }
 
 /* ============================================================
-   19. ОБРАБОТЧИКИ СОБЫТИЙ И ИНИЦИАЛИЗАЦИЯ
+   20. ОБРАБОТЧИКИ СОБЫТИЙ И ИНИЦИАЛИЗАЦИЯ
    ============================================================ */
 
 function handleEmptyCartMenuButton() {
@@ -1206,7 +1435,20 @@ async function initApp() {
   initImageErrorHandling();
 
   restoreCategoryFromHash();
+  restoreProductFromHash();
   initYandexMap();
+
+  /*
+   * Если карточка товара открыта и пользователь жмёт "назад"
+   * в браузере — хэш меняется сам, но саму модалку это не
+   * закрывает (это просто смена URL). Слушаем hashchange и
+   * закрываем карточку, если хэш уже не #product-...
+   */
+  window.addEventListener("hashchange", () => {
+    if (!window.location.hash.startsWith("#product-") && currentProductDetailId) {
+      closeProductDetail();
+    }
+  });
 
   if (!window.location.hash) window.scrollTo(0, 0);
   console.info("Sushi Shop App успешно запущен.");

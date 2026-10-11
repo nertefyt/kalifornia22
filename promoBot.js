@@ -107,6 +107,7 @@ const {
   listProducts,
   findProductById,
   addProduct,
+  updateProduct,
   setProductActive,
   deleteProduct
 } = require("./menuStore");
@@ -271,6 +272,8 @@ function formatProductDetails(product, category) {
   ];
 
   if (product.description) lines.push(`Описание: ${product.description}`);
+  if (product.composition) lines.push(`Состав: ${product.composition}`);
+  if (product.weight) lines.push(`Граммовка: ${product.weight}`);
   if (product.imageUrl) lines.push(`Картинка: ${product.imageUrl}`);
 
   return lines.join("\n");
@@ -300,8 +303,24 @@ const PRODUCT_STEPS = {
   CATEGORY: "category",
   NAME: "name",
   DESCRIPTION: "description",
+  COMPOSITION: "composition",
+  WEIGHT: "weight",
   PRICE: "price",
   IMAGE: "image"
+};
+
+/*
+ * Шаги мастера РЕДАКТИРОВАНИЯ существующего товара — отдельный
+ * набор от PRODUCT_STEPS (там мастер СОЗДАНИЯ нового товара).
+ * Редактируем только description/composition: остальное (цена,
+ * категория, картинка) можно поменять через /product_del + /product_add
+ * заново, а для двух текстовых полей, которые часто уточняют
+ * "на живую", отдельная команда удобнее.
+ */
+const PRODUCT_EDIT_STEPS = {
+  DESCRIPTION: "edit_description",
+  COMPOSITION: "edit_composition",
+  WEIGHT: "edit_weight"
 };
 
 /*
@@ -392,6 +411,7 @@ function start() {
         "/product_list [slug категории] — список товаров",
         "/product_info ID — подробности о товаре",
         "/product_add — добавить товар (пошагово)",
+        "/product_edit ID — изменить описание, состав или граммовку",
         "/product_del ID — удалить товар",
         "/product_on ID / /product_off ID — включить/выключить",
         "",
@@ -709,6 +729,37 @@ function start() {
     });
   });
 
+  bot.command("product_edit", async ctx => {
+    if (await denyIfNotAdmin(ctx)) return;
+
+    const id = Number(ctx.match);
+
+    if (!Number.isInteger(id)) {
+      await ctx.reply("Использование: /product_edit ID");
+      return;
+    }
+
+    const product = await findProductById(id);
+
+    if (!product) {
+      await ctx.reply(`Товар #${id} не найден.`);
+      return;
+    }
+
+    await ctx.reply(
+      `Что изменить у товара <b>${product.name}</b>?`,
+      {
+        parse_mode: "HTML",
+        reply_markup: new InlineKeyboardBuilder()
+          .text("📝 Описание", `product_edit_field:description:${id}`)
+          .text("🧾 Состав", `product_edit_field:composition:${id}`)
+          .row()
+          .text("⚖️ Граммовка", `product_edit_field:weight:${id}`)
+          .build()
+      }
+    );
+  });
+
   bot.command("product_add", async ctx => {
     if (await denyIfNotAdmin(ctx)) return;
 
@@ -867,6 +918,51 @@ function start() {
       return;
     }
 
+    /* --- выбор поля для редактирования (/product_edit) --- */
+    if (data.startsWith("product_edit_field:")) {
+      const [, field, idStr] = data.split(":");
+      const id = Number(idStr);
+
+      const product = await findProductById(id);
+
+      if (!product) {
+        await ctx.answerCallbackQuery({ text: "Товар уже не найден." });
+        return;
+      }
+
+      const FIELD_META = {
+        description: { step: PRODUCT_EDIT_STEPS.DESCRIPTION, label: "описание", current: product.description },
+        composition: { step: PRODUCT_EDIT_STEPS.COMPOSITION, label: "состав", current: product.composition },
+        weight: { step: PRODUCT_EDIT_STEPS.WEIGHT, label: "граммовка", current: product.weight }
+      };
+
+      const meta = FIELD_META[field];
+
+      if (!meta) {
+        await ctx.answerCallbackQuery({ text: "Неизвестное поле." });
+        return;
+      }
+
+      sessions.set(chatId, {
+        type: "product_edit",
+        step: meta.step,
+        data: { id }
+      });
+
+      const currentValue = meta.current;
+
+      await ctx.answerCallbackQuery();
+      await ctx.api.editMessageText({
+        chat_id: chatId,
+        message_id: messageId,
+        text:
+          `Текущее значение (${meta.label}):\n` +
+          `${currentValue || "— не заполнено —"}\n\n` +
+          `Отправьте новый текст (или «-», чтобы очистить поле):`
+      });
+      return;
+    }
+
     await ctx.answerCallbackQuery();
   });
 
@@ -894,6 +990,11 @@ function start() {
 
     if (session.type === "product_add") {
       await handleProductAddStep(ctx, chatId, session, text);
+      return;
+    }
+
+    if (session.type === "product_edit") {
+      await handleProductEditStep(ctx, chatId, session, text);
       return;
     }
   });
@@ -1027,6 +1128,28 @@ function start() {
 
       case PRODUCT_STEPS.DESCRIPTION: {
         session.data.description = text === "-" ? null : text;
+        session.step = PRODUCT_STEPS.COMPOSITION;
+
+        await ctx.reply(
+          "Состав товара? Например: «Рис, нори, лосось, сливочный сыр, огурец».\n" +
+          "Введите текст или «-», чтобы пропустить:"
+        );
+        return;
+      }
+
+      case PRODUCT_STEPS.COMPOSITION: {
+        session.data.composition = text === "-" ? null : text;
+        session.step = PRODUCT_STEPS.WEIGHT;
+
+        await ctx.reply(
+          "Граммовка/объём? Например: «250 г», «8 шт / 220 г», «0.5 л».\n" +
+          "Введите текст или «-», чтобы пропустить:"
+        );
+        return;
+      }
+
+      case PRODUCT_STEPS.WEIGHT: {
+        session.data.weight = text === "-" ? null : text;
         session.step = PRODUCT_STEPS.PRICE;
 
         await ctx.reply("Цена товара (число, например 590):");
@@ -1068,6 +1191,40 @@ function start() {
       default:
         return;
     }
+  }
+
+  /* ----------------------------------------------------------
+     Шаг мастера /product_edit — сохраняем новое значение поля
+     ---------------------------------------------------------- */
+  async function handleProductEditStep(ctx, chatId, session, text) {
+    const newValue = text === "-" ? null : text;
+    const EDIT_TARGETS = {
+      [PRODUCT_EDIT_STEPS.DESCRIPTION]: { key: "description", label: "Описание" },
+      [PRODUCT_EDIT_STEPS.COMPOSITION]: { key: "composition", label: "Состав" },
+      [PRODUCT_EDIT_STEPS.WEIGHT]: { key: "weight", label: "Граммовка" }
+    };
+
+    const target = EDIT_TARGETS[session.step];
+
+    if (!target) {
+      sessions.delete(chatId);
+      return;
+    }
+
+    const patch = { [target.key]: newValue };
+
+    const result = await updateProduct(session.data.id, patch);
+    sessions.delete(chatId);
+
+    if (!result.success) {
+      await ctx.reply(`❌ Не удалось сохранить: ${result.reason}`);
+      return;
+    }
+
+    await ctx.reply(
+      `✅ ${target.label} обновлено:\n\n${formatProductDetails(result.product)}`,
+      { parse_mode: "HTML" }
+    );
   }
 
   /*

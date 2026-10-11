@@ -30,6 +30,8 @@ function mapProductRow(row) {
     categoryId: row.category_id,
     name: row.name,
     description: row.description,
+    composition: row.composition,
+    weight: row.weight,
     price: toNumber(row.price),
     imageUrl: row.image_url,
     isActive: row.is_active
@@ -124,7 +126,7 @@ async function getMenu() {
   const categories = await listCategories();
 
   const productsResult = await db.query(
-    `SELECT id, category_id, name, description, price, image_url, is_active
+    `SELECT id, category_id, name, description, composition, weight, price, image_url, is_active
      FROM products
      WHERE is_active = true
      ORDER BY category_id ASC, id ASC`
@@ -142,7 +144,7 @@ async function listProducts({ onlyActive = false } = {}) {
   const whereClause = onlyActive ? "WHERE is_active = true" : "";
 
   const result = await db.query(
-    `SELECT id, category_id, name, description, price, image_url, is_active
+    `SELECT id, category_id, name, description, composition, weight, price, image_url, is_active
      FROM products
             ${whereClause}
      ORDER BY id ASC`
@@ -153,7 +155,7 @@ async function listProducts({ onlyActive = false } = {}) {
 
 async function findProductById(id) {
   const result = await db.query(
-    `SELECT id, category_id, name, description, price, image_url, is_active
+    `SELECT id, category_id, name, description, composition, weight, price, image_url, is_active
      FROM products
      WHERE id = $1`,
     [id]
@@ -186,7 +188,7 @@ async function findProductsByIds(ids, executor = db) {
   }
 
   const result = await executor.query(
-    `SELECT id, category_id, name, description, price, image_url, is_active
+    `SELECT id, category_id, name, description, composition, weight, price, image_url, is_active
      FROM products
      WHERE id = ANY($1::int[])`,
     [numericIds]
@@ -202,7 +204,7 @@ async function findProductsByIds(ids, executor = db) {
   return map;
 }
 
-async function addProduct({ categoryId, name, description, price, imageUrl, isActive }) {
+async function addProduct({ categoryId, name, description, composition, weight, price, imageUrl, isActive }) {
   const cleanName = String(name || "").trim();
   const cleanPrice = toNumber(price, NaN);
 
@@ -238,13 +240,15 @@ async function addProduct({ categoryId, name, description, price, imageUrl, isAc
   }
 
   const result = await db.query(
-    `INSERT INTO products (category_id, name, description, price, image_url, is_active)
-     VALUES ($1, $2, $3, $4, $5, $6)
-     RETURNING id, category_id, name, description, price, image_url, is_active`,
+    `INSERT INTO products (category_id, name, description, composition, weight, price, image_url, is_active)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+       RETURNING id, category_id, name, description, composition, weight, price, image_url, is_active`,
     [
       categoryId || null,
       cleanName,
       description || null,
+      composition || null,
+      weight || null,
       cleanPrice,
       imageUrl || null,
       isActive !== false
@@ -266,13 +270,15 @@ async function updateProduct(id, patch) {
   const result = await db.query(
     `UPDATE products
      SET category_id = $1, name = $2, description = $3,
-         price = $4, image_url = $5, is_active = $6
-     WHERE id = $7
-       RETURNING id, category_id, name, description, price, image_url, is_active`,
+         composition = $4, weight = $5, price = $6, image_url = $7, is_active = $8
+     WHERE id = $9
+       RETURNING id, category_id, name, description, composition, weight, price, image_url, is_active`,
     [
       merged.categoryId || null,
       merged.name,
       merged.description || null,
+      merged.composition || null,
+      merged.weight || null,
       toNumber(merged.price),
       merged.imageUrl || null,
       merged.isActive !== false,

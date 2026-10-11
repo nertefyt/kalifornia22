@@ -124,6 +124,7 @@ const express = require("express");
 const cors = require("cors");
 const dotenv = require("dotenv");
 const path = require("path");
+const fs = require("fs"); // нужен для чтения index.html в SEO-роуте /product/:id (см. ниже)
 
 /*
  * ВАЖНО: dotenv.config() должен выполниться ДО require("./db")
@@ -171,6 +172,10 @@ const TELEGRAM_CHAT_ID =
     process.env.TELEGRAM_CHAT_ID || ""
   ).trim();
 
+const ADMIN_CHAT_IDS = (process.env.ADMIN_CHAT_IDS || "")
+  .split(",")
+  .map(id => id.trim())
+  .filter(Boolean);
 
 /*
  * Корневая директория проекта.
@@ -270,6 +275,211 @@ app.use(
 
 будут доступны через текущий домен.
  */
+/*
+ * ЗАЩИТА ИСХОДНИКОВ СЕРВЕРА.
+ *
+ * Ниже сайт раздаёт статику прямо из корневой папки проекта
+ * (index.html, app.js, styles.css, images/...). Но в этой же папке
+ * лежат серверные файлы — без этого блока любой посетитель мог бы
+ * скачать https://твой-сайт/server.js, /db.js, /schema.sql,
+ * /package.json и т.д. и увидеть весь код сервера, структуру БД
+ * и список зависимостей (а если когда-нибудь в код попадёт пароль —
+ * то и его). Поэтому такие пути закрываем и отвечаем 404.
+ *
+ * Если добавишь в корень проекта ещё какой-то серверный файл —
+ * допиши его имя сюда.
+ */
+const BLOCKED_PUBLIC_PATHS =
+  /^\/(?:server|db|menuStore|promoStore|ordersStore|emailNotifier|promoBot|seed|optimize-images)\.js$|^\/schema\.sql$|^\/package(?:-lock)?\.json$|^\/(?:node_modules|\.git|\.env)(?:\/|$|\.)|\.(?:md|log|sql|env)$/i;
+
+app.use(
+  (req, res, next) => {
+
+    let requestPath = req.path;
+
+    try {
+
+      requestPath =
+        decodeURIComponent(
+          req.path
+        );
+
+    } catch (error) {
+
+      return res.status(400).send("Bad request");
+
+    }
+
+
+    // нормализуем (убираем /./, //, регистр не важен — regexp с флагом i)
+    requestPath =
+      path.posix.normalize(
+        requestPath
+      );
+
+
+    if (
+      BLOCKED_PUBLIC_PATHS.test(
+        requestPath
+      )
+    ) {
+
+      return res.status(404).send("Not found");
+
+    }
+
+
+    return next();
+
+  }
+);
+
+
+/*
+ * gzip-сжатие ответов (HTML, JS, CSS, JSON API) — заметно уменьшает
+ * объём передаваемых данных. Пакет необязательный: если он не
+ * установлен (npm install compression), сервер просто работает
+ * без сжатия и пишет предупреждение.
+ */
+try {
+
+  app.use(
+    require("compression")()
+  );
+
+} catch (error) {
+
+  console.warn(
+    "⚠️ Пакет compression не установлен — gzip отключён. " +
+    "Включить: npm install compression"
+  );
+
+}
+
+
+/*
+ * Картинки товаров.
+ *
+ * 1. WebP вместо JPG/PNG. Если браузер умеет WebP (заголовок Accept
+ *    содержит image/webp) и рядом с оригиналом лежит файл с тем же
+ *    именем и расширением .webp (его создаёт `node optimize-images.js`),
+ *    отдаём его — он в разы легче. Адреса картинок в БД и в app.js
+ *    не меняются: /images/philadelphia.jpg остаётся адресом,
+ *    просто в ответ приходит WebP. Если .webp-файла нет или браузер
+ *    его не поддерживает — отдаётся обычный оригинал.
+ *
+ * 2. Долгое кэширование: браузер посетителя не скачивает одну и ту же
+ *    картинку повторно 30 дней. Если заменяешь картинку — меняй
+ *    имя файла (philadelphia-2.jpg), иначе у вернувшихся посетителей
+ *    ещё какое-то время будет показываться старая.
+ */
+const IMAGES_DIR =
+  path.join(
+    ROOT_DIR,
+    "images"
+  );
+
+const IMAGE_CACHE_SECONDS =
+  60 * 60 * 24 * 30;
+
+app.use(
+  "/images",
+  (req, res, next) => {
+
+    if (
+      req.method !== "GET" &&
+      req.method !== "HEAD"
+    ) {
+
+      return next();
+
+    }
+
+
+    // Ответ зависит от Accept — чтобы кэши не перепутали версии.
+    res.setHeader(
+      "Vary",
+      "Accept"
+    );
+
+
+    const match =
+      /^(.*)\.(jpe?g|png)$/i.exec(
+        req.path
+      );
+
+
+    const acceptsWebp =
+      /image\/webp/.test(
+        req.headers.accept || ""
+      );
+
+
+    if (
+      match &&
+      acceptsWebp
+    ) {
+
+      try {
+
+        const webpPath =
+          path.join(
+            IMAGES_DIR,
+            decodeURIComponent(
+              match[1]
+            ) + ".webp"
+          );
+
+
+        // защита от выхода за пределы папки images (../)
+        if (
+          webpPath.startsWith(
+            IMAGES_DIR + path.sep
+          ) &&
+          fs.existsSync(
+            webpPath
+          )
+        ) {
+
+          res.setHeader(
+            "Cache-Control",
+            `public, max-age=${IMAGE_CACHE_SECONDS}`
+          );
+
+          return res
+            .type("image/webp")
+            .sendFile(
+              webpPath
+            );
+
+        }
+
+      } catch (error) {
+
+        // любая странность в пути — просто отдаём оригинал ниже
+
+      }
+
+    }
+
+
+    return next();
+
+  }
+);
+
+app.use(
+  "/images",
+  express.static(
+    IMAGES_DIR,
+    {
+      maxAge:
+        IMAGE_CACHE_SECONDS * 1000
+    }
+  )
+);
+
+
 app.use(
   express.static(
     ROOT_DIR,
@@ -1221,6 +1431,7 @@ async function sendTelegramMessage(
         },
 
         body:
+
           JSON.stringify({
 
             chat_id:
@@ -2383,6 +2594,116 @@ app.get(
 );
 
 
+/*
+ * GET /api/products/:id
+ *
+ * Один товар целиком — включая composition (состав) и полное
+ * description ("вкусное" описание), которых нет в облегчённом
+ * списке из /api/menu. Нужен для отдельной страницы товара.
+ *
+ * Отдаём товар даже если is_active = false (не 404) — если кто-то
+ * сохранил/переслал прямую ссылку на товар, который временно сняли
+ * с продажи, лучше показать "сейчас недоступен" с явным статусом,
+ * чем голый 404. Кнопку "в корзину" на фронте в этом случае нужно
+ * дизейблить по полю isActive.
+ */
+app.get(
+  "/api/products/:id",
+  async (req, res) => {
+
+    try {
+
+      const id =
+        Number(req.params.id);
+
+
+      if (
+        !Number.isInteger(id) ||
+        id <= 0
+      ) {
+
+        return res.status(400).json({
+
+          success: false,
+
+          message:
+            "Некорректный id товара."
+
+        });
+
+      }
+
+
+      const product =
+        await menuStore.findProductById(
+          id
+        );
+
+
+      if (!product) {
+
+        return res.status(404).json({
+
+          success: false,
+
+          message:
+            "Товар не найден."
+
+        });
+
+      }
+
+
+      const categories =
+        await menuStore.listCategories();
+
+      const category =
+        categories.find(
+          c => c.id === product.categoryId
+        ) || null;
+
+
+      return res.json({
+
+        success: true,
+
+        product: {
+
+          ...product,
+
+          categoryName:
+            category?.name || null,
+
+          categorySlug:
+            category?.slug || null
+
+        }
+
+      });
+
+    } catch (error) {
+
+      console.error(
+        "Ошибка /api/products/:id:",
+        error
+      );
+
+
+      return res.status(500).json({
+
+        success: false,
+
+        message:
+          "Не удалось загрузить товар."
+
+      });
+
+    }
+
+  }
+);
+
+
 /* ============================================================
    17. HEALTH CHECK
    ============================================================ */
@@ -2438,6 +2759,183 @@ app.get(
         isTelegramConfigured()
 
     });
+
+  }
+);
+
+
+/* ============================================================
+   17А. SEO: META-ТЕГИ ДЛЯ СТРАНИЦЫ ТОВАРА, SITEMAP, ROBOTS
+   ============================================================ */
+
+/*
+ * Сайт — одностраничное приложение (SPA): весь HTML всегда
+ * один и тот же index.html, а контент дорисовывает app.js уже
+ * в браузере. Для поисковика и для превью ссылок в мессенджерах
+ * это плохо: <title> и <meta name="description"> в исходном
+ * HTML одни и те же для ЛЮБОГО товара, поэтому ссылка на
+ * конкретный ролл в Telegram/соцсетях выглядит как "Суши-бар —
+ * главная" без привязки к конкретному товару.
+ *
+ * Чинится без полного перехода на серверный рендеринг: для
+ * путей вида /product/:id сервер подставляет в HTML правильные
+ * <title>/<meta description>/Open Graph теги ДО того, как
+ * страница уйдёт в браузер, а дальше app.js как обычно
+ * дорисовывает интерфейс поверх. Для самого поискового бота
+ * этого недостаточно для полноценной индексации тысяч товаров
+ * (см. пояснение в чате), но для превью ссылок — более чем
+ * достаточно, и это самая дешёвая часть SEO, которую стоит
+ * сделать прямо сейчас.
+ */
+function injectProductMetaTags(html, product, pageUrl) {
+  const title = `${product.name} — ${formatMoney(product.price)} | Суши-бар`;
+
+  const description =
+    (product.description || "Вкусные роллы и суши с доставкой.")
+      .slice(0, 200);
+
+  const escapedTitle = escapeTelegramHtml(title);
+  const escapedDescription = escapeTelegramHtml(description);
+  const escapedImage = product.imageUrl ? escapeTelegramHtml(product.imageUrl) : "";
+  const escapedUrl = escapeTelegramHtml(pageUrl);
+
+  let result = html;
+
+  // <title>
+  if (/<title>.*?<\/title>/is.test(result)) {
+    result = result.replace(/<title>.*?<\/title>/is, `<title>${escapedTitle}</title>`);
+  } else {
+    result = result.replace(/<head>/i, `<head>\n<title>${escapedTitle}</title>`);
+  }
+
+  // meta description (заменяем существующий, если есть, иначе добавляем)
+  if (/<meta\s+name=["']description["'][^>]*>/i.test(result)) {
+    result = result.replace(
+      /<meta\s+name=["']description["'][^>]*>/i,
+      `<meta name="description" content="${escapedDescription}">`
+    );
+  } else {
+    result = result.replace(
+      /<\/title>/i,
+      `</title>\n<meta name="description" content="${escapedDescription}">`
+    );
+  }
+
+  // Open Graph — для красивого превью ссылки в Telegram/соцсетях
+  const ogTags = [
+    `<meta property="og:title" content="${escapedTitle}">`,
+    `<meta property="og:description" content="${escapedDescription}">`,
+    `<meta property="og:type" content="product">`,
+    `<meta property="og:url" content="${escapedUrl}">`,
+    escapedImage ? `<meta property="og:image" content="${escapedImage}">` : ""
+  ].filter(Boolean).join("\n");
+
+  result = result.replace(/<\/head>/i, `${ogTags}\n</head>`);
+
+  return result;
+}
+
+/*
+ * GET /product/:id — отдаёт index.html с подставленными мета-тегами.
+ * Сам контент товара на странице рисует app.js через
+ * GET /api/products/:id, как обычно — здесь только HTML "обёртка".
+ */
+app.get(
+  "/product/:id",
+  async (req, res, next) => {
+
+    try {
+
+      const id = Number(req.params.id);
+
+      if (!Number.isInteger(id) || id <= 0) {
+        return next(); // некорректный id — просто отдаём обычный index.html
+      }
+
+      const product = await menuStore.findProductById(id);
+
+      if (!product) {
+        return next(); // товар не найден — обычный index.html, без 404 для простоты
+      }
+
+      const indexPath = path.join(ROOT_DIR, "index.html");
+
+      if (!fs.existsSync(indexPath)) {
+        return next();
+      }
+
+      const html = fs.readFileSync(indexPath, "utf8");
+      const pageUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+
+      const finalHtml = injectProductMetaTags(html, product, pageUrl);
+
+      return res.send(finalHtml);
+
+    } catch (error) {
+
+      console.error("Ошибка /product/:id (SEO meta):", error);
+      return next(); // при любой ошибке — не ломаем страницу, просто обычный index.html
+
+    }
+
+  }
+);
+
+/*
+ * GET /sitemap.xml — список всех страниц для поисковых роботов:
+ * главная + страница каждого активного товара. Помогает им
+ * быстрее найти и проиндексировать карточки товаров, а не только
+ * главную. Генерируется на лету из текущих данных в БД — не нужно
+ * вручную обновлять файл при каждом новом товаре.
+ */
+app.get(
+  "/sitemap.xml",
+  async (req, res) => {
+
+    try {
+
+      const baseUrl = `${req.protocol}://${req.get("host")}`;
+      const products = await menuStore.listProducts({ onlyActive: true });
+
+      const urls = [
+        `<url><loc>${baseUrl}/</loc><changefreq>daily</changefreq><priority>1.0</priority></url>`,
+        ...products.map(
+          product =>
+            `<url><loc>${baseUrl}/product/${product.id}</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>`
+        )
+      ].join("\n");
+
+      const xml =
+        `<?xml version="1.0" encoding="UTF-8"?>\n` +
+        `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls}\n</urlset>`;
+
+      res.header("Content-Type", "application/xml");
+      return res.send(xml);
+
+    } catch (error) {
+
+      console.error("Ошибка /sitemap.xml:", error);
+      return res.status(500).send("");
+
+    }
+
+  }
+);
+
+/*
+ * GET /robots.txt — говорит поисковым роботам, что сайт можно
+ * обходить целиком, и указывает, где искать sitemap.xml.
+ */
+app.get(
+  "/robots.txt",
+  (req, res) => {
+
+    const baseUrl = `${req.protocol}://${req.get("host")}`;
+
+    res.type("text/plain");
+    return res.send(
+      `User-agent: *\nAllow: /\nSitemap: ${baseUrl}/sitemap.xml\n`
+    );
 
   }
 );

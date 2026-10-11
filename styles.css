@@ -814,6 +814,8 @@ h3 {
   box-shadow:
     var(--shadow-small);
 
+  cursor: pointer;
+
   transition:
     transform var(--transition),
     box-shadow var(--transition);
@@ -1000,9 +1002,11 @@ h3 {
   margin-bottom: 12px;
 
   color:
-    var(--text-light);
+    var(--text-secondary);
 
-  font-size: 11px;
+  font-size: 13px;
+
+  font-weight: 600;
 
 }
 
@@ -1784,7 +1788,8 @@ h3 {
    ============================================================ */
 
 .cart-modal,
-.checkout-modal {
+.checkout-modal,
+.product-modal {
 
   position: fixed;
 
@@ -1822,7 +1827,8 @@ h3 {
 
 
 .cart-modal.modal-visible,
-.checkout-modal.modal-visible {
+.checkout-modal.modal-visible,
+.product-modal.modal-visible {
 
   transform:
     translateY(0);
@@ -1912,6 +1918,183 @@ h3 {
 
   background:
     #EAEAEA;
+
+}
+
+
+/* ============================================================
+   PRODUCT MODAL (страница товара)
+   ============================================================ */
+
+.product-modal-body {
+
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 18px;
+
+  padding: 20px;
+
+}
+
+
+.product-modal-image {
+
+  position: relative;
+
+  width: 100%;
+
+  aspect-ratio: 4 / 3;
+
+  overflow: hidden;
+
+  border-radius: var(--radius-large);
+
+  background: var(--orange-light);
+
+}
+
+
+.product-modal-image img {
+
+  width: 100%;
+
+  height: 100%;
+
+  object-fit: cover;
+
+}
+
+
+.product-modal-image .product-image-placeholder {
+
+  width: 100%;
+
+  height: 100%;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  font-size: 64px;
+
+}
+
+
+.product-modal-content {
+
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 16px;
+
+}
+
+
+.product-modal-price {
+
+  font-size: 26px;
+
+  color: var(--orange);
+
+}
+
+
+.product-modal-section h3 {
+
+  margin: 0 0 6px;
+
+  font-family: var(--font-heading);
+
+  font-size: 13px;
+
+  font-weight: 800;
+
+  letter-spacing: 0.02em;
+
+  text-transform: uppercase;
+
+  color: var(--text-secondary);
+
+}
+
+
+.product-modal-section p {
+
+  margin: 0;
+
+  color: var(--text);
+
+  line-height: 1.6;
+
+}
+
+
+.product-modal-unavailable {
+
+  margin: 0;
+
+  padding: 12px 14px;
+
+  border-radius: var(--radius-small);
+
+  background: var(--orange-light);
+
+  color: var(--orange-dark);
+
+  font-weight: 700;
+
+}
+
+
+.product-modal-footer {
+
+  display: flex;
+
+  align-items: center;
+
+  gap: 14px;
+
+  padding: 16px 20px 25px;
+
+  border-top: 1px solid var(--border);
+
+}
+
+
+.product-modal-footer .cart-item-controls {
+
+  flex: 0 0 auto;
+
+  min-height: 46px;
+
+  padding: 6px 10px;
+
+  font-size: 16px;
+
+}
+
+
+.product-modal-footer .quantity-button {
+
+  width: 34px;
+
+  height: 34px;
+
+  font-size: 20px;
+
+}
+
+
+.product-modal-footer .add-to-cart-button {
+
+  flex: 1 1 auto;
+
+  min-height: 46px;
 
 }
 
@@ -3141,6 +3324,155 @@ h3 {
   .hero h1 {
 
     font-size: 39px;
+
+  }
+
+}
+
+
+/* ============================================================
+   PRODUCT MODAL — граммовка и десктопная версия
+   ============================================================ */
+
+.product-modal-meta {
+
+  display: flex;
+
+  align-items: baseline;
+
+  flex-wrap: wrap;
+
+  gap: 10px 14px;
+
+}
+
+
+.product-modal-weight {
+
+  padding: 4px 10px;
+
+  border-radius: 999px;
+
+  background: var(--orange-light);
+
+  color: var(--text);
+
+  font-size: 13px;
+
+  font-weight: 700;
+
+}
+
+
+/* Планшет: вместо растянутой на всю ширину "шторки" — окно по центру */
+@media (min-width: 600px) {
+
+  .product-modal {
+
+    top: 50%;
+
+    left: 50%;
+
+    right: auto;
+
+    bottom: auto;
+
+    width: min(560px, 92vw);
+
+    max-height: 90vh;
+
+    border-radius: 24px;
+
+    opacity: 0;
+
+    transform:
+      translate(-50%, -46%) scale(0.97);
+
+    transition:
+      transform 0.25s ease,
+      opacity 0.25s ease,
+      visibility 0.25s ease;
+
+  }
+
+
+  .product-modal.modal-visible {
+
+    opacity: 1;
+
+    transform:
+      translate(-50%, -50%) scale(1);
+
+  }
+
+}
+
+
+/* Компьютер: фиксированное окно, две колонки — фото слева, информация справа */
+@media (min-width: 900px) {
+
+  .product-modal {
+
+    width: min(880px, 92vw);
+
+    max-height: 86vh;
+
+    overflow: hidden;
+
+    display: grid;
+
+    grid-template-columns: 1fr;
+
+    grid-template-rows: auto minmax(0, 1fr) auto;
+
+  }
+
+
+  .product-modal > .cart-modal-header {
+
+    grid-column: 1 / -1;
+
+  }
+
+
+  .product-modal-body {
+
+    min-height: 0;
+
+    display: grid;
+
+    grid-template-columns: 1fr 1fr;
+
+    align-items: start;
+
+    gap: 28px;
+
+    padding: 24px 28px;
+
+    overflow-y: auto;
+
+  }
+
+
+  .product-modal-image {
+
+    aspect-ratio: 1 / 1;
+
+  }
+
+
+  .product-modal-footer {
+
+    justify-content: flex-end;
+
+    padding: 16px 28px 24px;
+
+  }
+
+
+  .product-modal-footer .add-to-cart-button {
+
+    flex: 0 1 280px;
 
   }
 

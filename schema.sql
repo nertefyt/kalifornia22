@@ -37,6 +37,17 @@ CREATE TABLE IF NOT EXISTS products (
   is_active   BOOLEAN NOT NULL DEFAULT true
   );
 
+-- Состав (ингредиенты) — отдельно от description, которое теперь
+-- используется как "вкусное" продающее описание на странице товара.
+-- ADD COLUMN IF NOT EXISTS — безопасно накатывается на уже
+-- существующую БД (db.initSchema() гоняет этот файл при каждом
+-- старте сервера), руками ничего мигрировать не нужно.
+ALTER TABLE products ADD COLUMN IF NOT EXISTS composition TEXT;
+
+-- Граммовка/объём (например "250 г", "6 шт / 180 г", "0.5 л") — свободный текст.
+-- Показывается в карточке на главной вместо описания и на странице товара.
+ALTER TABLE products ADD COLUMN IF NOT EXISTS weight VARCHAR(50);
+
 -- Ускоряет GET /api/menu (JOIN + фильтр по категории)
 CREATE INDEX IF NOT EXISTS idx_products_category_id
   ON products (category_id);
@@ -105,5 +116,3 @@ CREATE TABLE IF NOT EXISTS order_items (
 
 CREATE INDEX IF NOT EXISTS idx_order_items_order_id
   ON order_items (order_id);
-
-
