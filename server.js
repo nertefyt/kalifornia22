@@ -127,11 +127,6 @@ const path = require("path");
 const fs = require("fs"); // нужен для чтения index.html в SEO-роуте /product/:id (см. ниже)
 const { priceCartItems } = require("./optionsStore");
 const { CartLineError } = require("./pricing");
-let priced;
-try { priced = await priceCartItems(items, client); }
-catch (e) { if (e instanceof CartLineError) { await client.query("ROLLBACK"); return res.status(400).json({ error: e.message }); } throw e; }
-const orderItemsForMessage = priced.lines;   // поля: productName, variantName, options, unitPrice, quantity
-const subtotal = priced.subtotal;
 /*
  * ВАЖНО: dotenv.config() должен выполниться ДО require("./db")
  * (и любого другого модуля, который читает process.env при
@@ -2094,67 +2089,25 @@ app.post(
        *     любые name/price, которые мог прислать клиент.
        * ------------------------------------------------
        */
-      const productsById =
-        await menuStore.findProductsByIds(
-          body.items.map(item => item.id),
-          client
-        );
+      let priced;
 
-
-      for (
-        const item of body.items
-        ) {
-
-        const product =
-          productsById.get(
-            Number(item.id)
-          );
-
-
-        if (
-          !product ||
-          !product.isActive
-        ) {
-
-          await client.query(
-            "ROLLBACK"
-          );
+      try {
+        priced = await priceCartItems(body.items, client);
+      } catch (error) {
+        if (error instanceof CartLineError) {
+          await client.query("ROLLBACK");
 
           return res.status(400).json({
-
             success: false,
-
-            message:
-              `Товар с id ${item.id} недоступен или не найден. ` +
-              "Обновите страницу и соберите корзину заново."
-
+            message: error.message
           });
-
         }
 
-
-        const quantity =
-          Number(item.quantity);
-
-
-        subtotal +=
-          product.price *
-          quantity;
-
-
-        orderItemsForMessage.push({
-
-          productId: product.id,
-
-          productName: product.name,
-
-          unitPrice: product.price,
-
-          quantity
-
-        });
-
+        throw error;
       }
+
+      subtotal = priced.subtotal;
+      orderItemsForMessage.push(...priced.lines);
 
 
       /*
