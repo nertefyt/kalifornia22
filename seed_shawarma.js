@@ -43,7 +43,7 @@ const GROUPS = [
   {
     name: "Соус",
     minSelect: 1,
-    maxSelect: 2,
+    maxSelect: 1,
     options: [
       { name: "Чесночный", price: 0 },
       { name: "Грибной", price: 0 },

@@ -1692,9 +1692,25 @@ function buildTelegramOrderMessage(
         quantity;
 
 
-      lines.push(
-        `${index + 1}. ${itemName}`
-      );
+      const variantLabel =
+        item.variantName
+          ? ` — <b>${escapeTelegramHtml(item.variantName)}</b>`
+          : "";
+
+      lines.push(`${index + 1}. ${itemName}${variantLabel}`);
+
+      if (Array.isArray(item.options) && item.options.length > 0) {
+        const optionsText = item.options
+          .map(option => {
+            const optionPrice = toNumber(option.price);
+
+            return escapeTelegramHtml(option.name) +
+              (optionPrice > 0 ? ` (+${formatMoney(optionPrice)})` : "");
+          })
+          .join(", ");
+
+        lines.push(`   ➕ ${optionsText}`);
+      }
 
 
       lines.push(
@@ -2366,13 +2382,11 @@ app.post(
 
       items:
         orderItemsForMessage.map(item => ({
-
           name: item.productName,
-
+          variantName: item.variantName || null,
+          options: item.options || [],
           price: item.unitPrice,
-
           quantity: item.quantity
-
         })),
 
       promo:
