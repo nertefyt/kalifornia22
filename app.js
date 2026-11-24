@@ -519,13 +519,13 @@ function getSelectionProblem(product) {
 }
 
 function optionPriceLabel(price) {
-  return Number(price) > 0 ? `+${formatPrice(price)}` : "бесплатно";
+  return Number(price) > 0 ? `+${formatPrice(price)}` : "";
 }
 
 function groupHint(group) {
   const min = Math.min(group.minSelect, group.options.length);
   if (group.maxSelect === 1) return min > 0 ? "обязательно" : "по желанию";
-  return `${min > 0 ? "обязательно, " : ""}до ${group.maxSelect}`;
+  return `${min > 0 ? "обязательно, " : ""}до ${group.minSelect}`;
 }
 
 let renderedOptionsKey = null;
