@@ -125,8 +125,6 @@ const cors = require("cors");
 const dotenv = require("dotenv");
 const path = require("path");
 const fs = require("fs"); // нужен для чтения index.html в SEO-роуте /product/:id (см. ниже)
-const { priceCartItems } = require("./optionsStore");
-const { CartLineError } = require("./pricing");
 /*
  * ВАЖНО: dotenv.config() должен выполниться ДО require("./db")
  * (и любого другого модуля, который читает process.env при
@@ -152,7 +150,8 @@ const menuStore = require("./menuStore");
 const promoStore = require("./promoStore");
 const ordersStore = require("./ordersStore");
 const emailNotifier = require("./emailNotifier");
-
+const { priceCartItems } = require("./optionsStore");
+const { CartLineError } = require("./pricing");
 
 /* ============================================================
    2. КОНФИГУРАЦИЯ
