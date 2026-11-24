@@ -125,7 +125,13 @@ const cors = require("cors");
 const dotenv = require("dotenv");
 const path = require("path");
 const fs = require("fs"); // нужен для чтения index.html в SEO-роуте /product/:id (см. ниже)
-
+const { priceCartItems } = require("./optionsStore");
+const { CartLineError } = require("./pricing");
+let priced;
+try { priced = await priceCartItems(items, client); }
+catch (e) { if (e instanceof CartLineError) { await client.query("ROLLBACK"); return res.status(400).json({ error: e.message }); } throw e; }
+const orderItemsForMessage = priced.lines;   // поля: productName, variantName, options, unitPrice, quantity
+const subtotal = priced.subtotal;
 /*
  * ВАЖНО: dotenv.config() должен выполниться ДО require("./db")
  * (и любого другого модуля, который читает process.env при
@@ -290,8 +296,7 @@ app.use(
  * допиши его имя сюда.
  */
 const BLOCKED_PUBLIC_PATHS =
-  /^\/(?:server|db|menuStore|promoStore|ordersStore|emailNotifier|promoBot|seed|optimize-images)\.js$|^\/schema\.sql$|^\/package(?:-lock)?\.json$|^\/(?:node_modules|\.git|\.env)(?:\/|$|\.)|\.(?:md|log|sql|env)$/i;
-
+  /^\/(?:server|db|menuStore|promoStore|ordersStore|emailNotifier|promoBot|seed|seed_shawarma|pricing|optionsStore|optimize[-_]images|webpack[^/]*)\.js$|…/i
 app.use(
   (req, res, next) => {
 
@@ -495,7 +500,11 @@ app.use(
 /* ============================================================
    5. ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
    ============================================================ */
-
+function formatItemName(i) {
+  const size = i.variantName ? ` (${i.variantName})` : "";
+  const opts = (i.options || []).length ? "\n   + " + i.options.map(o => o.price > 0 ? `${o.name} +${o.price}₽` : o.name).join(", ") : "";
+  return `${i.productName}${size}${opts}`;
+}
 
 /*
  * Форматирование рублей.

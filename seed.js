@@ -102,14 +102,6 @@ const SEED_DATA = [
         imageUrl: "/img/xxl.png"
       },
       {
-        name: "Ролл «Дабл креветка»",
-        description: "Для любителей морепродуктов с двойной порцией креветки",
-        composition: "рис, нори, сливочный сыр, огурец, двойная порция креветки",
-        weight: "260 г",
-        price: 560,
-        imageUrl: "/img/double.png"
-      },
-      {
         name: "Ролл «Филадельфия Лайт»",
         description: "Легкая версия классической Филадельфии",
         composition: "рис, нори, сливочный сыр, огурец, лосось",
@@ -396,6 +388,78 @@ const SEED_DATA = [
         weight: "340 г",
         price: 660,
         imageUrl: "/img/geisha.png"
+      },
+      {
+        name: "Ролл «Магуро Маки»",
+        description: "Классический маки-ролл с нежным тунцом",
+        composition: "тунец, рис, нори",
+        weight: "130 г",
+        price: 280,
+        imageUrl: "/img/maguro-maki.png"
+      },
+      {
+        name: "Ролл «Эби Маки»",
+        description: "Классический маки-ролл с креветкой",
+        composition: "креветка, рис, нори",
+        weight: "130 г",
+        price: 290,
+        imageUrl: "/img/ebi-maki.png"
+      },
+      {
+        name: "Ролл «Унаги Маки»",
+        description: "Маки-ролл с копченым угрем и кунжутом",
+        composition: "угорь, рис, кунжут, нори",
+        weight: "135 г",
+        price: 350,
+        imageUrl: "/img/unagi-maki.png"
+      },
+      {
+        name: "Ролл «Восток»",
+        description: "Ролл с лососем и рыжей тобико в кунжуте",
+        composition: "лосось, тобика рыжая, нори, рис, кунжут",
+        weight: "135 г",
+        price: 330,
+        imageUrl: "/img/vostok.png"
+      },
+      {
+        name: "Ролл «Калифорния в кунжуте»",
+        description: "Калифорния с лососем, обвалянная в кунжуте",
+        composition: "сыр, огурец, лосось, нори, рис, кунжут",
+        weight: "230 г",
+        price: 410,
+        imageUrl: "/img/california-sesame.png"
+      },
+      {
+        name: "Ролл «Япоша»",
+        description: "Сытный ролл с лососем и креветкой под соусом спайси",
+        composition: "сыр, томат, креветка, лосось, тобика рыжая, соус спайси",
+        weight: "250 г",
+        price: 520,
+        imageUrl: "/img/yaposha.png"
+      },
+      {
+        name: "Ролл «Чикен Голд»",
+        description: "Ролл с курицей и двумя видами сыра",
+        composition: "сыр, курица, тостерный сыр",
+        weight: "220 г",
+        price: 330,
+        imageUrl: "/img/chicken-cheese.png"
+      },
+      {
+        name: "Ролл «Чиз Кранч»",
+        description: "Сырный ролл для любителей нежного вкуса",
+        composition: "сыр тостерный, сыр творожный",
+        weight: "180 г",
+        price: 310,
+        imageUrl: "/img/double-cheese.png"
+      },
+      {
+        name: "Ролл «Санрайз Шримп»",
+        description: "Ролл с креветкой, хрустящим салатом и рыжей тобико",
+        composition: "тобика рыжая, салат айсберг, креветка, сыр творожный, рис, нори",
+        weight: "210 г",
+        price: 430,
+        imageUrl: "/img/ebi-tobiko.png"
       }
     ]
   },
@@ -484,6 +548,14 @@ const SEED_DATA = [
         imageUrl: "/img/salmon-tempura.png"
       },
       {
+        name: "Ролл «Дабл креветка»",
+        description: "Для любителей морепродуктов с двойной порцией креветки",
+        composition: "рис, нори, сливочный сыр, огурец, двойная порция креветки",
+        weight: "260 г",
+        price: 560,
+        imageUrl: "/img/double.png"
+      },
+      {
         name: "Ролл «Краб темпура»",
         description: "Темпура ролл со снежным крабом",
         composition: "рис, нори, сливочный сыр, огурец, снежный краб",
@@ -498,6 +570,38 @@ const SEED_DATA = [
         weight: "310 г",
         price: 420,
         imageUrl: "/img/bonito-tempura.png"
+      },
+      {
+        name: "Ролл «Унаги темпура»",
+        description: "Горячий хрустящий ролл в кляре с копченым угрем",
+        composition: "сыр, угорь, огурец",
+        weight: "260 г",
+        price: 460,
+        imageUrl: "/img/unagi-tempura.png"
+      },
+      {
+        name: "Ролл «Магуро хот»",
+        description: "Горячий ролл с тунцом и сыром",
+        composition: "сыр, тунец, огурец",
+        weight: "260 г",
+        price: 410,
+        imageUrl: "/img/maguro-hot.png"
+      },
+      {
+        name: "Ролл «Сливочный с лососем»",
+        description: "Жареный ролл с лососем и сливочным сыром",
+        composition: "лосось, сыр сливочный, сыр тостерный",
+        weight: "210 г",
+        price: 420,
+        imageUrl: "/img/creamy-salmon.png"
+      },
+      {
+        name: "Ролл «Сашики»",
+        description: "Жареный ролл с двойной порцией креветки",
+        composition: "двойная порция креветки, сливочный сыр, тобика",
+        weight: "270 г",
+        price: 520,
+        imageUrl: "/img/sashiki.png"
       }
     ]
   },
@@ -568,6 +672,14 @@ const SEED_DATA = [
         weight: "7 штук",
         price: 250,
         imageUrl: "/img/nuggets.png"
+      },
+      {
+        name: "Эби Фурай",
+        description: "Хрустящие креветки в панировке",
+        composition: "креветка в панировке",
+        weight: "160 г",
+        price: 660,
+        imageUrl: "/img/ebi-furai.png"
       }
     ]
   },
@@ -595,6 +707,32 @@ const SEED_DATA = [
         weight: "350 г",
         price: 460,
         imageUrl: "/img/tom-yum-chicken.png"
+      }
+    ]
+  },
+  // =========================
+  // ДЕСЕРТЫ
+  // =========================
+  {
+    name: "Десерты",
+    slug: "desserts",
+    sortOrder: 9,
+    products: [
+      {
+        name: "Манго спринг ролл",
+        description: "Сладкий хрустящий ролл с манго и шоколадным топингом",
+        composition: "сладкий сыр, манго, спринг тесто, шоколадный топинг",
+        weight: "170 г",
+        price: 370,
+        imageUrl: "/img/mango-spring-roll.png"
+      },
+      {
+        name: "Спринг ролл с бананом и шоколадом",
+        description: "Сладкий хрустящий ролл с бананом и шоколадным топингом",
+        composition: "спринг тесто, сладкий сыр, банан, шоколадный топинг",
+        weight: "170 г",
+        price: 330,
+        imageUrl: "/img/banana-spring-roll.png"
       }
     ]
   }

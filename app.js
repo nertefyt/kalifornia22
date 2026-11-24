@@ -33,7 +33,16 @@ const APP_CONFIG = {
 /* ============================================================
    2. ГЛОБАЛЬНОЕ СОСТОЯНИЕ ПРИЛОЖЕНИЯ
    ============================================================ */
+const makeLineKey = (id, variantId, modifierIds = []) =>
+  [id, variantId || 0, [...modifierIds].map(Number).sort((a, b) => a - b).join(",")].join("|");
 
+function addToCart(productId, { variantId = null, modifierIds = [], quantity = 1 } = {}) {
+  const key = makeLineKey(productId, variantId, modifierIds);
+  const line = appState.cart.find(i => i.key === key);
+  if (line) line.quantity += quantity;
+  else appState.cart.push({ key, id: String(productId), variantId, modifierIds: [...modifierIds], quantity });
+  saveCart(); renderCart();
+}
 const appState = {
   cart: [],
   promo: null,
@@ -885,7 +894,7 @@ function ensureFulfillmentControls() {
       <input type="radio" name="fulfillmentType" value="pickup">
       <span class="radio-card-content">
         <strong>🏪 Самовывоз</strong>
-        <small>Забрать заказ из магазина</small>
+        <small>По адресу: ул. Мозаичная, д. 44б</small>
       </span>
     </label>
   `;

@@ -132,7 +132,10 @@ async function getMenu() {
      ORDER BY category_id ASC, id ASC`
   );
 
-  const products = productsResult.rows.map(mapProductRow);
+  // Ленивый require: optionsStore сам зависит от menuStore (избегаем цикла).
+  const products = await require("./optionsStore").attachOptions(
+    productsResult.rows.map(mapProductRow)
+  );
 
   return categories.map(category => ({
     ...category,

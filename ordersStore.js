@@ -33,10 +33,10 @@ async function insertOrder(client, {
 }) {
   const result = await client.query(
     `INSERT INTO orders
-       (customer_name, customer_phone, delivery_type, address,
-        total_amount, discount_amount, promocode_used)
+     (customer_name, customer_phone, delivery_type, address,
+      total_amount, discount_amount, promocode_used)
      VALUES ($1, $2, $3, $4, $5, $6, $7)
-     RETURNING id, created_at`,
+       RETURNING id, created_at`,
     [
       customerName,
       customerPhone,
@@ -65,21 +65,25 @@ async function insertOrderItems(client, orderId, items) {
 
   const values = [];
   const placeholders = items.map((item, index) => {
-    const base = index * 5;
+    const base = index * 8;
 
     values.push(
       orderId,
       item.productId ?? null,
       item.productName,
       toNumber(item.unitPrice),
-      Number(item.quantity)
+      Number(item.quantity),
+      item.variantId ?? null,
+      item.variantName ?? null,
+      JSON.stringify(item.options || [])
     );
 
-    return `($${base + 1}, $${base + 2}, $${base + 3}, $${base + 4}, $${base + 5})`;
+    return `($${base + 1}, $${base + 2}, $${base + 3}, $${base + 4}, $${base + 5}, $${base + 6}, $${base + 7}, $${base + 8}::jsonb)`;
   });
 
   await client.query(
-    `INSERT INTO order_items (order_id, product_id, product_name, unit_price, quantity)
+    `INSERT INTO order_items
+     (order_id, product_id, product_name, unit_price, quantity, variant_id, variant_name, options)
      VALUES ${placeholders.join(", ")}`,
     values
   );
