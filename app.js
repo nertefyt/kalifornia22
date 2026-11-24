@@ -524,7 +524,7 @@ function optionPriceLabel(price) {
 
 function groupHint(group) {
   const min = Math.min(group.minSelect, group.options.length);
-  if (group.maxSelect === 1) return min > 1 ? "обязательно" : "по желанию";
+  if (group.maxSelect === 1) return min > 0 ? "обязательно" : "по желанию";
   return `${min > 0 ? "обязательно, " : ""}до ${group.minSelect}`;
 }
 

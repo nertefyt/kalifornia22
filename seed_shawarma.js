@@ -42,7 +42,7 @@ const CATEGORY = { name: "Шаурма", slug: "shawarma", sortOrder: 8 };
 const GROUPS = [
   {
     name: "Соус",
-    minSelect: 1,
+    minSelect: 0,
     maxSelect: 1,
     options: [
       { name: "Чесночный", price: 0 },
