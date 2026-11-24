@@ -33,16 +33,6 @@ const APP_CONFIG = {
 /* ============================================================
    2. ГЛОБАЛЬНОЕ СОСТОЯНИЕ ПРИЛОЖЕНИЯ
    ============================================================ */
-const makeLineKey = (id, variantId, modifierIds = []) =>
-  [id, variantId || 0, [...modifierIds].map(Number).sort((a, b) => a - b).join(",")].join("|");
-
-function addToCart(productId, { variantId = null, modifierIds = [], quantity = 1 } = {}) {
-  const key = makeLineKey(productId, variantId, modifierIds);
-  const line = appState.cart.find(i => i.key === key);
-  if (line) line.quantity += quantity;
-  else appState.cart.push({ key, id: String(productId), variantId, modifierIds: [...modifierIds], quantity });
-  saveCart(); renderCart();
-}
 const appState = {
   cart: [],
   promo: null,
@@ -208,7 +198,10 @@ async function loadMenuFromServer() {
         price: product.price,
         image: product.imageUrl,
         weight: product.weight,
-        available: product.isActive !== false
+        available: product.isActive !== false,
+        // Размеры и группы добавок (у простых товаров — пустые массивы).
+        variants: Array.isArray(product.variants) ? product.variants : [],
+        modifierGroups: Array.isArray(product.modifierGroups) ? product.modifierGroups : []
         // badge в текущей схеме БД нет — карточка просто не покажет
         // этот необязательный элемент.
       }))
@@ -291,6 +284,82 @@ function renderCategorySection(category, index) {
   DOM.menuCategories.appendChild(section);
 }
 
+/* ============================================================
+   7А. РАЗМЕРЫ И ДОБАВКИ (варианты и модификаторы)
+   ============================================================ */
+
+/*
+ * Товар может быть:
+ *  - простым (суши): variants = [], modifierGroups = [];
+ *  - с одним размером: размер выбирается сам, селектор не показывается;
+ *  - с несколькими размерами и/или соусами: нужен выбор в окне товара.
+ *
+ * ВАЖНО: цены здесь — только для показа. Итог всегда пересчитывает
+ * сервер по id размера и добавок (см. /api/checkout).
+ */
+
+const toCents = value => Math.round(Number(value) * 100);
+
+function needsChoice(product) {
+  return (product?.variants || []).length > 1 ||
+    (product?.modifierGroups || []).length > 0;
+}
+
+/*
+ * Уникальный ключ строки корзины: один и тот же товар с разным
+ * размером или набором добавок — разные строки; порядок добавок
+ * на ключ не влияет.
+ */
+function makeLineKey(productId, variantId, modifierIds = []) {
+  const mods = [...modifierIds].map(Number).sort((a, b) => a - b).join(",");
+  return `${productId}|${variantId || 0}|${mods}`;
+}
+
+/*
+ * Находит размер и добавки товара по id и считает цену одной штуки.
+ * null — если выбор некорректен (размер/добавка пропали из меню и т.п.).
+ */
+function resolveCartLine(product, line) {
+  const variants = product.variants || [];
+  let variant = null;
+
+  if (variants.length > 0) {
+    if (line.variantId === null || line.variantId === undefined || line.variantId === "") {
+      if (variants.length !== 1) return null;
+      variant = variants[0];
+    } else {
+      variant = variants.find(v => String(v.id) === String(line.variantId)) || null;
+      if (!variant) return null;
+    }
+  } else if (line.variantId !== null && line.variantId !== undefined && line.variantId !== "") {
+    return null;
+  }
+
+  const options = [];
+  for (const rawId of Array.isArray(line.modifierIds) ? line.modifierIds : []) {
+    const id = Number(rawId);
+    let found = null;
+
+    for (const group of product.modifierGroups || []) {
+      const option = group.options.find(o => o.id === id);
+      if (option) { found = { ...option, groupId: group.id, group: group.name }; break; }
+    }
+
+    if (!found) return null;
+    options.push(found);
+  }
+
+  const cents = toCents(variant ? variant.price : product.price) +
+    options.reduce((sum, option) => sum + toCents(option.price), 0);
+
+  return { variant, options, unitPrice: cents / 100 };
+}
+
+function cardPriceHtml(product) {
+  const prefix = (product.variants || []).length > 1 ? "от " : "";
+  return `<strong class="product-price">${prefix}${formatPrice(product.price)}</strong>`;
+}
+
 function createProductCard(product) {
   const card = document.createElement("article");
   card.className = "product-card";
@@ -313,9 +382,9 @@ function createProductCard(product) {
       <h3 class="product-title">${escapeHtml(product.name)}</h3>
       ${product.weight ? `<div class="product-weight">${escapeHtml(product.weight)}</div>` : ""}
       <div class="product-footer">
-        <strong class="product-price">${formatPrice(product.price)}</strong>
+        ${cardPriceHtml(product)}
         <button type="button" class="add-to-cart-button" data-product-id="${escapeHtml(product.id)}" ${!product.available ? "disabled" : ""}>
-          ${product.available ? "В корзину" : "Недоступно"}
+          ${product.available ? (needsChoice(product) ? "Выбрать" : "В корзину") : "Недоступно"}
         </button>
       </div>
     </div>
@@ -326,6 +395,14 @@ function createProductCard(product) {
 function handleMenuClick(event) {
   const addButton = event.target.closest(".add-to-cart-button");
   if (addButton) {
+    const product = getProductById(addButton.dataset.productId);
+
+    // Шаурма и другие товары с выбором — сначала окно товара.
+    if (product && product.available && needsChoice(product)) {
+      openProductDetail(product.id);
+      return;
+    }
+
     addToCart(addButton.dataset.productId);
     return;
   }
@@ -383,6 +460,8 @@ function ensureProductModal() {
           <strong class="product-modal-price" id="productModalPrice"></strong>
           <span class="product-modal-weight" id="productModalWeight" hidden></span>
         </div>
+        <div class="product-options" id="productModalOptions"></div>
+        <p class="product-options-hint" id="productModalHint" hidden></p>
         <div class="product-modal-section">
           <h3>Описание</h3>
           <p id="productModalDescription">—</p>
@@ -412,6 +491,171 @@ function ensureProductModal() {
   document.getElementById("productModalIncrease").addEventListener("click", () => changeProductModalQuantity(1));
   document.getElementById("productModalDecrease").addEventListener("click", () => changeProductModalQuantity(-1));
   document.getElementById("productModalAddButton").addEventListener("click", handleProductModalAddToCart);
+  document.getElementById("productModalOptions").addEventListener("change", handleProductOptionChange);
+}
+
+/* ---------- выбор размера и добавок в окне товара ---------- */
+
+let currentModalProduct = null;
+let modalSelection = { variantId: null, modifierIds: [] };
+
+function resetModalSelection(product) {
+  modalSelection = {
+    variantId: product?.variants?.length ? product.variants[0].id : null,
+    modifierIds: []
+  };
+}
+
+function getGroupSelectedCount(group) {
+  return group.options.filter(o => modalSelection.modifierIds.includes(o.id)).length;
+}
+
+function getSelectionProblem(product) {
+  for (const group of product.modifierGroups || []) {
+    const min = Math.min(group.minSelect, group.options.length);
+    if (getGroupSelectedCount(group) < min) return `Выберите: ${group.name}`;
+  }
+  return null;
+}
+
+function optionPriceLabel(price) {
+  return Number(price) > 0 ? `+${formatPrice(price)}` : "бесплатно";
+}
+
+function groupHint(group) {
+  const min = Math.min(group.minSelect, group.options.length);
+  if (group.maxSelect === 1) return min > 0 ? "обязательно" : "по желанию";
+  return `${min > 0 ? "обязательно, " : ""}до ${group.maxSelect}`;
+}
+
+let renderedOptionsKey = null;
+
+function renderProductOptions(product) {
+  const container = document.getElementById("productModalOptions");
+  if (!container) return;
+
+  /*
+   * Окно товара рисуется дважды (сразу из меню и после ответа сервера).
+   * Если опции не изменились — DOM не пересоздаём: иначе клик, сделанный
+   * в момент перерисовки, попал бы в уже удалённый элемент и потерялся.
+   */
+  const key = JSON.stringify([product.id, product.variants, product.modifierGroups]);
+  if (key === renderedOptionsKey && container.children.length > 0) {
+    syncOptionInputs();
+    return;
+  }
+  renderedOptionsKey = key;
+
+  let html = "";
+
+  if ((product.variants || []).length > 1) {
+    html += `<fieldset class="option-group"><legend>Размер</legend>` +
+      product.variants.map(v => `
+        <label class="option-row">
+          <input type="radio" name="pm-variant" value="${v.id}">
+          <span class="option-name">${escapeHtml(v.name)}${v.weight ? ` <small>${escapeHtml(v.weight)}</small>` : ""}</span>
+          <span class="option-price">${formatPrice(v.price)}</span>
+        </label>`).join("") + `</fieldset>`;
+  }
+
+  for (const group of product.modifierGroups || []) {
+    const min = Math.min(group.minSelect, group.options.length);
+    const useRadio = group.maxSelect === 1 && min >= 1;
+
+    html += `<fieldset class="option-group"><legend>${escapeHtml(group.name)} <span class="option-hint">${groupHint(group)}</span></legend>` +
+      group.options.map(o => `
+        <label class="option-row">
+          <input type="${useRadio ? "radio" : "checkbox"}" name="pm-group-${group.id}" data-group-id="${group.id}" value="${o.id}">
+          <span class="option-name">${escapeHtml(o.name)}</span>
+          <span class="option-price">${optionPriceLabel(o.price)}</span>
+        </label>`).join("") + `</fieldset>`;
+  }
+
+  container.innerHTML = html;
+  container.hidden = html === "";
+  syncOptionInputs();
+}
+
+function syncOptionInputs() {
+  const container = document.getElementById("productModalOptions");
+  const product = currentModalProduct;
+  if (!container || !product) return;
+
+  container.querySelectorAll('input[name="pm-variant"]').forEach(input => {
+    input.checked = Number(input.value) === modalSelection.variantId;
+  });
+
+  for (const group of product.modifierGroups || []) {
+    const atMax = group.maxSelect > 1 && getGroupSelectedCount(group) >= group.maxSelect;
+
+    container.querySelectorAll(`input[data-group-id="${group.id}"]`).forEach(input => {
+      const checked = modalSelection.modifierIds.includes(Number(input.value));
+      input.checked = checked;
+      input.disabled = atMax && !checked;
+    });
+  }
+}
+
+function handleProductOptionChange(event) {
+  const input = event.target;
+  const product = currentModalProduct;
+  if (!product || !(input instanceof HTMLInputElement)) return;
+
+  if (input.name === "pm-variant") {
+    modalSelection.variantId = Number(input.value);
+  } else {
+    const group = (product.modifierGroups || []).find(g => g.id === Number(input.dataset.groupId));
+    if (!group) return;
+
+    const optionId = Number(input.value);
+    const groupIds = group.options.map(o => o.id);
+
+    if (group.maxSelect === 1) {
+      // «Один из»: выбор заменяет предыдущий в этой группе.
+      modalSelection.modifierIds = modalSelection.modifierIds.filter(id => !groupIds.includes(id));
+      if (input.checked) modalSelection.modifierIds.push(optionId);
+    } else if (input.checked) {
+      if (getGroupSelectedCount(group) >= group.maxSelect) {
+        showToast(`«${group.name}»: можно выбрать не более ${group.maxSelect}`);
+      } else {
+        modalSelection.modifierIds.push(optionId);
+      }
+    } else {
+      modalSelection.modifierIds = modalSelection.modifierIds.filter(id => id !== optionId);
+    }
+  }
+
+  syncOptionInputs();
+  updateProductModalPrice();
+}
+
+function updateProductModalPrice() {
+  const product = currentModalProduct;
+  if (!product) return;
+
+  const quantity = Number(document.getElementById("productModalQuantity")?.textContent) || 1;
+  const resolved = resolveCartLine(product, modalSelection);
+  const unitPrice = resolved ? resolved.unitPrice : Number(product.price);
+
+  document.getElementById("productModalPrice").textContent = formatPrice(unitPrice);
+
+  const weightEl = document.getElementById("productModalWeight");
+  const weight = resolved?.variant?.weight || product.weight;
+  weightEl.textContent = weight || "";
+  weightEl.hidden = !weight;
+
+  const problem = needsChoice(product) ? getSelectionProblem(product) : null;
+  const hint = document.getElementById("productModalHint");
+  hint.textContent = problem || "";
+  hint.hidden = !problem;
+
+  const button = document.getElementById("productModalAddButton");
+  if (product.available === false) return;
+
+  button.disabled = Boolean(problem) || !resolved;
+  button.textContent = needsChoice(product)
+    ? `В корзину · ${formatPrice(unitPrice * quantity)}`
+    : "В корзину";
 }
 
 function changeProductModalQuantity(delta) {
@@ -419,15 +663,26 @@ function changeProductModalQuantity(delta) {
   if (!span) return;
   const next = Math.max(1, Math.min(99, Number(span.textContent) + delta));
   span.textContent = String(next);
+  updateProductModalPrice();
 }
 
 function handleProductModalAddToCart() {
   if (!currentProductDetailId) return;
   const quantity = Number(document.getElementById("productModalQuantity")?.textContent) || 1;
+  const product = currentModalProduct || getProductById(currentProductDetailId);
 
-  for (let i = 0; i < quantity; i++) {
-    addToCart(currentProductDetailId);
+  if (product && needsChoice(product)) {
+    const problem = getSelectionProblem(product);
+    if (problem) { showToast(problem); return; }
   }
+
+  const added = addToCart(currentProductDetailId, {
+    variantId: modalSelection.variantId,
+    modifierIds: modalSelection.modifierIds,
+    quantity
+  });
+
+  if (!added) return;
 
   closeProductDetail();
   openCart();
@@ -457,6 +712,7 @@ async function openProductDetail(productId) {
   document.body.classList.add("modal-open");
 
   document.getElementById("productModalQuantity").textContent = "1";
+  resetModalSelection(getProductById(id));
 
   /*
    * Сначала показываем то, что уже есть в memoData (мгновенно,
@@ -484,7 +740,10 @@ async function openProductDetail(productId) {
         weight: data.product.weight,
         price: data.product.price,
         image: data.product.imageUrl,
-        available: data.product.isActive !== false
+        available: data.product.isActive !== false,
+        // /api/products/:id не отдаёт размеры и добавки — берём их из меню.
+        variants: cachedProduct?.variants || [],
+        modifierGroups: cachedProduct?.modifierGroups || []
       });
     } else if (!cachedProduct) {
       showToast(data?.message || "Не удалось загрузить товар.");
@@ -500,8 +759,10 @@ async function openProductDetail(productId) {
 function renderProductModal(product) {
   if (!product || String(product.id) !== currentProductDetailId) return;
 
+  currentModalProduct = product;
   document.getElementById("productModalTitle").textContent = product.name || "Товар";
   document.getElementById("productModalPrice").textContent = formatPrice(product.price);
+  renderProductOptions(product);
 
   const weightEl = document.getElementById("productModalWeight");
   if (product.weight) {
@@ -533,6 +794,8 @@ function renderProductModal(product) {
   const addButton = document.getElementById("productModalAddButton");
   addButton.disabled = !isAvailable;
   addButton.textContent = isAvailable ? "В корзину" : "Недоступно";
+
+  updateProductModalPrice();
 }
 
 function closeProductDetail() {
@@ -621,11 +884,39 @@ function loadCartFromStorage() {
     const parsed = JSON.parse(storedCart);
     if (!Array.isArray(parsed)) { appState.cart = []; return; }
 
-    appState.cart = parsed
-      .filter(item => item && typeof item.id === "string" && Number.isFinite(Number(item.quantity)))
-      .map(item => ({ id: item.id, quantity: Math.max(1, Math.floor(Number(item.quantity))) }))
-      .filter(item => getProductById(item.id) !== null);
+    /*
+     * Старый формат корзины — { id, quantity } — читается как есть
+     * (variantId = null, добавок нет). Строки с размером/добавками,
+     * которых больше нет в меню, отбрасываются.
+     */
+    const lines = new Map();
 
+    for (const item of parsed) {
+      if (!item || typeof item.id !== "string" || !Number.isFinite(Number(item.quantity))) continue;
+
+      const product = getProductById(item.id);
+      if (!product) continue;
+
+      const modifierIds = (Array.isArray(item.modifierIds) ? item.modifierIds : [])
+        .map(Number)
+        .sort((a, b) => a - b);
+
+      const resolved = resolveCartLine(product, {
+        variantId: item.variantId ?? null,
+        modifierIds
+      });
+      if (!resolved) continue;
+
+      const variantId = resolved.variant ? resolved.variant.id : null;
+      const key = makeLineKey(product.id, variantId, modifierIds);
+      const quantity = Math.max(1, Math.floor(Number(item.quantity)));
+
+      const existing = lines.get(key);
+      if (existing) existing.quantity += quantity;
+      else lines.set(key, { key, id: product.id, variantId, modifierIds, quantity });
+    }
+
+    appState.cart = [...lines.values()];
     saveCartToStorage();
   } catch (error) {
     console.error("Не удалось загрузить корзину:", error);
@@ -637,33 +928,68 @@ function loadCartFromStorage() {
    11. КОРЗИНА
    ============================================================ */
 
-function addToCart(productId) {
+/*
+ * Добавляет строку в корзину. Возвращает true, если добавлено.
+ * options: { variantId?, modifierIds?, quantity? }.
+ * Один и тот же товар с разным размером/добавками — разные строки
+ * (ключ строки: productId|variantId|modifierIds).
+ */
+function addToCart(productId, options = {}) {
   const product = getProductById(productId);
-  if (!product) { showToast("Товар не найден."); return; }
-  if (!product.available) { showToast("Этот товар сейчас недоступен."); return; }
+  if (!product) { showToast("Товар не найден."); return false; }
+  if (!product.available) { showToast("Этот товар сейчас недоступен."); return false; }
 
-  const existingItem = appState.cart.find(item => item.id === productId);
-  if (existingItem) existingItem.quantity += 1;
-  else appState.cart.push({ id: productId, quantity: 1 });
+  const quantity = Math.max(1, Math.min(99, Math.floor(Number(options.quantity)) || 1));
+  const modifierIds = [...new Set((options.modifierIds || []).map(Number))].sort((a, b) => a - b);
+
+  const resolved = resolveCartLine(product, {
+    variantId: options.variantId ?? null,
+    modifierIds
+  });
+
+  if (!resolved || (needsChoice(product) && getSelectionProblemFor(product, modifierIds))) {
+    showToast("Выберите размер и добавки.");
+    openProductDetail(product.id);
+    return false;
+  }
+
+  const variantId = resolved.variant ? resolved.variant.id : null;
+  const key = makeLineKey(product.id, variantId, modifierIds);
+
+  const existingLine = appState.cart.find(line => line.key === key);
+  if (existingLine) existingLine.quantity += quantity;
+  else appState.cart.push({ key, id: product.id, variantId, modifierIds, quantity });
 
   saveCartToStorage();
   updateCartUI();
   showToast(`${product.name} добавлен в корзину`);
+  return true;
 }
 
-function removeFromCart(productId) {
-  const product = getProductById(productId);
-  appState.cart = appState.cart.filter(item => item.id !== productId);
+// Проверка min/max групп добавок для набора id (без окна товара).
+function getSelectionProblemFor(product, modifierIds) {
+  for (const group of product.modifierGroups || []) {
+    const count = group.options.filter(o => modifierIds.includes(o.id)).length;
+    if (count < Math.min(group.minSelect, group.options.length)) return `Выберите: ${group.name}`;
+    if (count > group.maxSelect) return `«${group.name}»: слишком много`;
+  }
+  return null;
+}
+
+function removeFromCart(lineKey) {
+  const line = appState.cart.find(item => item.key === lineKey);
+  const product = line ? getProductById(line.id) : null;
+  appState.cart = appState.cart.filter(item => item.key !== lineKey);
   saveCartToStorage();
   updateCartUI();
   if (product) showToast(`${product.name} удалён из корзины`);
 }
 
-function changeCartQuantity(productId, delta) {
-  const item = appState.cart.find(cartItem => cartItem.id === productId);
+function changeCartQuantity(lineKey, delta) {
+  const item = appState.cart.find(cartItem => cartItem.key === lineKey);
   if (!item) return;
   item.quantity += delta;
-  if (item.quantity <= 0) { removeFromCart(productId); return; }
+  if (item.quantity <= 0) { removeFromCart(lineKey); return; }
   saveCartToStorage();
   updateCartUI();
 }
@@ -677,10 +1003,30 @@ function clearCart() {
   updateCartUI();
 }
 
+/*
+ * Строки корзины в виде «товар + выбранные размер и добавки».
+ * price здесь — цена ОДНОЙ штуки с учётом размера и платных добавок
+ * (поэтому getCartSubtotal и остальные расчёты работают без изменений);
+ * id — по-прежнему id товара, а key — уникальный ключ строки.
+ */
 function getCartProducts() {
   return appState.cart.map(cartItem => {
     const product = getProductById(cartItem.id);
-    return product ? { ...product, quantity: cartItem.quantity } : null;
+    if (!product) return null;
+
+    const resolved = resolveCartLine(product, cartItem);
+    if (!resolved) return null;
+
+    return {
+      ...product,
+      key: cartItem.key,
+      variantId: resolved.variant ? resolved.variant.id : null,
+      variantName: resolved.variant ? resolved.variant.name : "",
+      options: resolved.options,
+      modifierIds: cartItem.modifierIds || [],
+      price: resolved.unitPrice,
+      quantity: cartItem.quantity
+    };
   }).filter(Boolean);
 }
 
@@ -730,6 +1076,18 @@ function renderCartItems() {
   if (DOM.cartSummary) DOM.cartSummary.hidden = products.length === 0;
 }
 
+function cartItemOptionsHtml(product) {
+  if (!product.options || product.options.length === 0) return "";
+
+  const text = product.options
+    .map(option => Number(option.price) > 0
+      ? `${option.name} +${formatPrice(option.price)}`
+      : option.name)
+    .join(", ");
+
+  return `<div class="cart-item-options">${escapeHtml(text)}</div>`;
+}
+
 function createCartItem(product) {
   const item = document.createElement("div");
   item.className = "cart-item";
@@ -740,15 +1098,16 @@ function createCartItem(product) {
   item.innerHTML = `
     <div class="cart-item-image">${imageHtml}</div>
     <div class="cart-item-main">
-      <h3>${escapeHtml(product.name)}</h3>
+      <h3>${escapeHtml(product.name)}${product.variantName && (product.variants || []).length > 1 ? ` <span class="cart-item-variant">${escapeHtml(product.variantName)}</span>` : ""}</h3>
+      ${cartItemOptionsHtml(product)}
       <strong>${formatPrice(product.price)}</strong>
       <div class="cart-item-controls">
-        <button type="button" class="quantity-button" data-cart-action="decrease" data-product-id="${escapeHtml(product.id)}" aria-label="Уменьшить quantity">−</button>
+        <button type="button" class="quantity-button" data-cart-action="decrease" data-line-key="${escapeHtml(product.key)}" aria-label="Уменьшить quantity">−</button>
         <span>${product.quantity}</span>
-        <button type="button" class="quantity-button" data-cart-action="increase" data-product-id="${escapeHtml(product.id)}" aria-label="Увеличить quantity">+</button>
+        <button type="button" class="quantity-button" data-cart-action="increase" data-line-key="${escapeHtml(product.key)}" aria-label="Увеличить quantity">+</button>
       </div>
     </div>
-    <button type="button" class="remove-cart-item" data-cart-action="remove" data-product-id="${escapeHtml(product.id)}" aria-label="Удалить ${escapeHtml(product.name)}">×</button>
+    <button type="button" class="remove-cart-item" data-cart-action="remove" data-line-key="${escapeHtml(product.key)}" aria-label="Удалить ${escapeHtml(product.name)}">×</button>
   `;
   return item;
 }
@@ -757,11 +1116,11 @@ function handleCartClick(event) {
   const button = event.target.closest("[data-cart-action]");
   if (!button) return;
   const action = button.dataset.cartAction;
-  const productId = button.dataset.productId;
+  const lineKey = button.dataset.lineKey;
 
-  if (action === "increase") changeCartQuantity(productId, 1);
-  if (action === "decrease") changeCartQuantity(productId, -1);
-  if (action === "remove") removeFromCart(productId);
+  if (action === "increase") changeCartQuantity(lineKey, 1);
+  if (action === "decrease") changeCartQuantity(lineKey, -1);
+  if (action === "remove") removeFromCart(lineKey);
 }
 
 function updateCartSummary() {
@@ -992,7 +1351,12 @@ async function validatePromoCode() {
       headers: { "Content-Type": "application/json", "Accept": "application/json" },
       body: JSON.stringify({
         code,
-        items: cartProducts.map(product => ({ id: product.id, quantity: product.quantity }))
+        items: cartProducts.map(product => ({
+          id: product.id,
+          quantity: product.quantity,
+          variantId: product.variantId,
+          modifierIds: product.modifierIds
+        }))
       })
     });
 
@@ -1171,7 +1535,9 @@ function buildCheckoutPayload() {
     },
     items: getCartProducts().map(product => ({
       id: product.id,
-      quantity: product.quantity
+      quantity: product.quantity,
+      variantId: product.variantId,
+      modifierIds: product.modifierIds
     })),
     promo: appState.promo ? { code: appState.promo.code } : null
   };
