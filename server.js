@@ -125,6 +125,7 @@ const cors = require("cors");
 const dotenv = require("dotenv");
 const path = require("path");
 const fs = require("fs"); // нужен для чтения index.html в SEO-роуте /product/:id (см. ниже)
+dotenv.config();
 /*
  * ВАЖНО: dotenv.config() должен выполниться ДО require("./db")
  * (и любого другого модуля, который читает process.env при
