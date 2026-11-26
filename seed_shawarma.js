@@ -67,7 +67,7 @@ const GROUPS = [
 const PRODUCTS = [
   {
     name: "Шаурма домашняя",
-    description: "Курица, свежие овощи, лаваш",
+    description: "Курица, томаты, огурец, капуста, картофель фри, лаваш",
     composition: "Курица, томаты, огурец, капуста, картофель фри, лаваш",
     image: "dom",
     variants: [
@@ -79,8 +79,8 @@ const PRODUCTS = [
   },
   {
     name: "Шаурма мясная",
-    description: "Мясо х2, свежие овощи, лаваш",
-    composition: "Мясо х2, огурец, томат, лук, лаваш",
+    description: "Мясо х2, огурец, томат, лаваш",
+    composition: "Мясо х2, огурец, томат, лаваш",
     image: "myaso",
     variants: [
       { name: "Маленькая", price: 370, weight: "" },
@@ -91,7 +91,7 @@ const PRODUCTS = [
   },
   {
     name: "Шаурма грибная",
-    description: "Курица, свежие овощи, лаваш",
+    description: "Курица, капуста, лук, шампиньоны, лаваш",
     composition: "Курица, капуста, лук, шампиньоны, лаваш",
     image: "grib",
     variants: [
@@ -103,8 +103,8 @@ const PRODUCTS = [
   },
   {
     name: "Шаурма гавайская",
-    description: "Курица, свежие овощи, лаваш",
-    composition: "Курица, сыр, ананас, капуста, лаваш",
+    description: "Курица, ананас, капуста, лаваш",
+    composition: "Курица, ананас, капуста, лаваш",
     image: "gavai",
     variants: [
       { name: "Маленькая", price: 320, weight: "" },
@@ -115,8 +115,8 @@ const PRODUCTS = [
   },
   {
     name: "Шаурма классическая",
-    description: "Курица, свежие овощи, лаваш",
-    composition: "Курица, томаты, огурец, капуста, лаваш",
+    description: "Курица, томаты, огурец, лаваш",
+    composition: "Курица, томаты, огурец, лаваш",
     image: "klassic",
     variants: [
       { name: "Маленькая", price: 300, weight: "" },
@@ -128,8 +128,8 @@ const PRODUCTS = [
   {
     // Единственный размер: на сайте селектор скрыт, размер выбирается сам.
     name: "Шаурма с креветкой",
-    description: "Креветка, свежие овощи, лаваш",
-    composition: "Креветка темпурная, капуста, томат, картофель фри, лаваш",
+    description: "Креветка темпурная, капуста, томат, лаваш",
+    composition: "Креветка темпурная, капуста, томат, лаваш",
     image: "sh_krevetka",
     variants: [{ name: "Средняя", price: 430, weight: "" }],
     groups: ["Соус"]
